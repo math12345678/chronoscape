@@ -215,11 +215,7 @@ export const ToastNotifications = () => {
       {toasts.map((toast, i) => (
         <div
           key={toast.id}
-          className={`
-            bg-gray-900/90 backdrop-blur-sm border rounded-lg px-4 py-3
-            shadow-2xl min-w-[260px] max-w-[320px]
-            animate-in slide-in-from-right-8 fade-in duration-300
-          `}
+          className="bg-gray-900/90 backdrop-blur-sm border rounded-lg px-4 py-3 shadow-2xl min-w-[260px] max-w-[320px]"
           style={{
             borderColor: `${toast.color}44`,
             animation: `toast-slide-in 0.4s ease-out forwards`,

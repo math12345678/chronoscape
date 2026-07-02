@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from '../../store'
 import { CalibrationGame } from './CalibrationGame'
+import { useModalClose } from '../../hooks/useModalClose'
 
 /**
  * Full-screen modal that opens when the player enters the Lab trigger zone.
@@ -12,30 +13,41 @@ export const LabModal = () => {
   const closeLab = useStore((s) => s.closeLab)
   const formulas = useStore((s) => s.formulas)
   const allDiscovered = formulas.every((f) => f.discovered)
+  const { closing, requestClose } = useModalClose(closeLab)
 
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && labOpen) {
-        closeLab()
+        requestClose()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [labOpen, closeLab])
+  }, [labOpen, requestClose])
 
   if (!labOpen) return null
 
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300" />
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-150"
+        style={{ opacity: closing ? 0 : 1 }}
+      />
 
       {/* Panel */}
       <div className="fixed z-50 inset-0 flex items-center justify-center">
         <div
           className="bg-gray-900/95 border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden"
-          style={{ width: 440, maxHeight: '90vh', animation: 'modal-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          style={{
+            width: 440,
+            maxHeight: '90vh',
+            animation: closing ? undefined : 'modal-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: 'opacity 0.18s ease, transform 0.18s ease',
+            opacity: closing ? 0 : 1,
+            transform: closing ? 'scale(0.95)' : 'scale(1)',
+          }}
         >
           {/* Header */}
           <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
@@ -50,7 +62,7 @@ export const LabModal = () => {
               </p>
             </div>
             <button
-              onClick={closeLab}
+              onClick={requestClose}
               className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-800"
               title="Close (Esc)"
             >

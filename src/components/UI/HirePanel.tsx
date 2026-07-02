@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useStore } from '../../store'
 import { getNPCs, addNPC } from '../NPC/NPCTick'
 import type { NPCTask } from '../../npcAI'
+import { useModalClose } from '../../hooks/useModalClose'
 
 const HIRE_COST = 15 // Liquid units per hire
 
@@ -17,6 +18,7 @@ interface HirePanelProps {
 }
 
 export const HirePanel = ({ onClose }: HirePanelProps) => {
+  const { closing, requestClose } = useModalClose(onClose)
   const inventory = useStore((s) => s.inventory)
   const liquid = Math.floor(inventory.liquid)
   const npcs = getNPCs()
@@ -54,10 +56,22 @@ export const HirePanel = ({ onClose }: HirePanelProps) => {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-150"
+        style={{ opacity: closing ? 0 : 1 }}
+        onClick={requestClose}
+      />
 
       {/* Panel */}
-      <div className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div
+        className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          animation: closing ? undefined : 'modal-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'opacity 0.18s ease, transform 0.18s ease',
+          opacity: closing ? 0 : 1,
+          transform: closing ? 'translate(-50%, -50%) scale(0.95)' : 'translate(-50%, -50%) scale(1)',
+        }}
+      >
         <div className="bg-gray-900/95 border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden" style={{ width: 420, maxHeight: '85vh' }}>
           {/* Header */}
           <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
@@ -69,7 +83,7 @@ export const HirePanel = ({ onClose }: HirePanelProps) => {
                 Hire NPCs to harvest time for you
               </p>
             </div>
-            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-800">
+            <button onClick={requestClose} className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-800">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4l10 10M14 4l-10 10" />
               </svg>
