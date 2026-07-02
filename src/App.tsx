@@ -16,6 +16,7 @@ import { AnomalyBanner } from './components/TimeAnomaly'
 import { ToastNotifications } from './components/UI/ToastNotifications'
 import { SaveIndicator } from './components/UI/SaveIndicator'
 import { OnboardingHint } from './components/UI/OnboardingHint'
+import { VolumeControl } from './components/UI/VolumeControl'
 import { AmbientMusic } from './components/AmbientMusic'
 import { useDecayLoop } from './hooks/useDecayLoop'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -76,6 +77,7 @@ function App() {
       <AnomalyBanner />
       <ToastNotifications />
       <OnboardingHint />
+      <VolumeControl />
     </div>
   )
 }

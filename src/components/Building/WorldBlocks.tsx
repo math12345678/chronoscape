@@ -5,6 +5,18 @@ import { useStore, BLOCK_COLOR_MAP, SHOP_BLOCK_COLORS } from '../../store'
 import type { BlockData } from '../../store'
 import { VAPOUR_BLOCK_DECAY_MS } from '../../config/constants'
 
+// Duration of the place-in scale pop, in ms.
+const PLACE_POP_MS = 150
+
+/** Eases a block's scale from 0 to 1 over PLACE_POP_MS after it was placed. */
+function placeScale(placedAt: number, now: number): number {
+  const t = Math.min(1, (now - placedAt) / PLACE_POP_MS)
+  if (t >= 1) return 1
+  // Overshoot ease-out for a satisfying "pop"
+  const eased = 1 - Math.pow(1 - t, 3)
+  return eased
+}
+
 /**
  * Computes current block colors from the store.
  * Re-renders when selectedBlockColor changes via useStore subscription.
@@ -132,16 +144,38 @@ const BlockInstances = ({
 
   useLayoutEffect(() => {
     if (!meshRef.current) return
+    const now = Date.now()
     for (let i = 0; i < count; i++) {
-      const [key] = entries[i]
+      const [key, block] = entries[i]
       const [x, y, z] = key.split(',').map(Number)
+      const s = placeScale(block.placedAt, now)
       dummy.position.set(x + 0.5, y + 0.5, z + 0.5)
+      dummy.scale.setScalar(s)
       dummy.updateMatrix()
       meshRef.current.setMatrixAt(i, dummy.matrix)
     }
     meshRef.current.instanceMatrix.needsUpdate = true
     meshRef.current.count = count
   }, [entries, count, dummy])
+
+  // Animate the scale-in pop for blocks placed within the last PLACE_POP_MS.
+  useFrame(() => {
+    if (!meshRef.current) return
+    const now = Date.now()
+    let anyPopping = false
+    for (let i = 0; i < count; i++) {
+      const [key, block] = entries[i]
+      if (now - block.placedAt >= PLACE_POP_MS) continue
+      anyPopping = true
+      const [x, y, z] = key.split(',').map(Number)
+      const s = placeScale(block.placedAt, now)
+      dummy.position.set(x + 0.5, y + 0.5, z + 0.5)
+      dummy.scale.setScalar(s)
+      dummy.updateMatrix()
+      meshRef.current.setMatrixAt(i, dummy.matrix)
+    }
+    if (anyPopping) meshRef.current.instanceMatrix.needsUpdate = true
+  })
 
   return (
     <instancedMesh
@@ -180,10 +214,13 @@ const CrystalBlockInstances = ({
 
   useLayoutEffect(() => {
     if (!meshRef.current) return
+    const now = Date.now()
     for (let i = 0; i < count; i++) {
-      const [key] = entries[i]
+      const [key, block] = entries[i]
       const [x, y, z] = key.split(',').map(Number)
+      const s = placeScale(block.placedAt, now)
       dummy.position.set(x + 0.5, y + 0.5, z + 0.5)
+      dummy.scale.setScalar(s)
       dummy.updateMatrix()
       meshRef.current.setMatrixAt(i, dummy.matrix)
     }
@@ -191,11 +228,26 @@ const CrystalBlockInstances = ({
     meshRef.current.count = count
   }, [entries, count, dummy])
 
-  // Subtle pulsing glow
+  // Subtle pulsing glow + scale-in pop for freshly placed blocks
   useFrame((state) => {
     if (!meshRef.current) return
     const pulse = 0.25 + Math.sin(state.clock.elapsedTime * 1.2) * 0.12
     ;(meshRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = pulse
+
+    const now = Date.now()
+    let anyPopping = false
+    for (let i = 0; i < count; i++) {
+      const [key, block] = entries[i]
+      if (now - block.placedAt >= PLACE_POP_MS) continue
+      anyPopping = true
+      const [x, y, z] = key.split(',').map(Number)
+      const s = placeScale(block.placedAt, now)
+      dummy.position.set(x + 0.5, y + 0.5, z + 0.5)
+      dummy.scale.setScalar(s)
+      dummy.updateMatrix()
+      meshRef.current.setMatrixAt(i, dummy.matrix)
+    }
+    if (anyPopping) meshRef.current.instanceMatrix.needsUpdate = true
   })
 
   return (

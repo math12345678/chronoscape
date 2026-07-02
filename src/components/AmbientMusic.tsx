@@ -22,6 +22,28 @@ let activeLFOs: OscillatorNode[] = []
 let activeNoise: AudioBufferSourceNode | null = null
 let isPlaying = false
 let masterVolume = 0
+const BASE_VOLUME = 0.3
+let userVolume = (() => {
+  const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('chronoscape:musicVolume') : null
+  const parsed = stored !== null ? Number(stored) : 0.7
+  return Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : 0.7
+})()
+
+/** Reads the user's current ambient music volume (0–1). */
+export function getAmbientVolume(): number {
+  return userVolume
+}
+
+/** Sets the user's ambient music volume (0–1), fading smoothly, and persists it. */
+export function setAmbientVolume(v: number) {
+  userVolume = Math.min(1, Math.max(0, v))
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('chronoscape:musicVolume', String(userVolume))
+  }
+  if (masterGain && audioCtx && isPlaying) {
+    masterGain.gain.linearRampToValueAtTime(BASE_VOLUME * userVolume, audioCtx.currentTime + 0.15)
+  }
+}
 
 function getContext() {
   if (!audioCtx) {
@@ -203,8 +225,8 @@ export function AmbientMusic() {
 
       // Fade in master volume
       if (masterGain) {
-        masterGain.gain.linearRampToValueAtTime(0.3, (audioCtx?.currentTime ?? 0) + 5)
-        masterVolume = 0.3
+        masterGain.gain.linearRampToValueAtTime(BASE_VOLUME * userVolume, (audioCtx?.currentTime ?? 0) + 5)
+        masterVolume = BASE_VOLUME * userVolume
       }
 
       // Build ambient layers

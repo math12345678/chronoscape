@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { useStore } from '../../store'
 import { CAPACITY, REFINE_RATIOS } from '../../config/constants'
 import type { TimeState } from '../../store'
-import { useSoundEngine } from '../../hooks/useSoundEngine'
 
 const PANEL_WIDTH = 360
 
@@ -48,7 +47,6 @@ export const RefinePanel = ({ onClose }: RefinePanelProps) => {
   const inventory = useStore((s) => s.inventory)
   const refine = useStore((s) => s.refine)
   const formulaDiscovered = useStore((s) => s.formulaDiscovered)
-  const sounds = useSoundEngine()
 
   const canRefineTo = useCallback(
     (to: TimeState) => {
@@ -64,11 +62,11 @@ export const RefinePanel = ({ onClose }: RefinePanelProps) => {
       const ratio = REFINE_RATIOS[to]
       const maxAfford = Math.floor(inventory.raw / ratio)
       if (maxAfford > 0) {
-        const success = refine(to, maxAfford)
-        if (success) sounds.refine()
+        // Sound plays from RefineVFXManager, in sync with the particle puff
+        refine(to, maxAfford)
       }
     },
-    [refine, inventory.raw, sounds],
+    [refine, inventory.raw],
   )
 
   return (

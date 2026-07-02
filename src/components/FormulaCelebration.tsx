@@ -1,7 +1,8 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
+import { useSoundEngine } from '../hooks/useSoundEngine'
 
 const PARTICLE_COUNT = 40
 const DURATION = 1.2
@@ -16,6 +17,11 @@ const FormulaCelebration = () => {
   const pointsRef = useRef<THREE.Points>(null)
   const elapsed = useRef(0)
   const done = useRef(false)
+  const sounds = useSoundEngine()
+
+  useEffect(() => {
+    sounds.formulaDiscovered()
+  }, [sounds])
 
   const { particles, geometry } = useMemo(() => {
     const posArray = new Float32Array(PARTICLE_COUNT * 3)

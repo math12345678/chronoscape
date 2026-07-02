@@ -149,6 +149,7 @@ export const BuildPreview = () => {
         // If building mode: remove the block
         if (isBuilding) {
           removeBlock(hit.id)
+          sounds.removeBlock()
           return
         }
 
@@ -164,6 +165,7 @@ export const BuildPreview = () => {
 
         // Otherwise just remove single block
         removeBlock(hit.id)
+        sounds.removeBlock()
       }
     }
 

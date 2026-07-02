@@ -87,19 +87,21 @@ export const TradeModal = ({ onClose }: TradeModalProps) => {
     const success = tradeLiquid(tradeAmount)
     if (success) {
       showMessage(`Traded ${tradeAmount * currentLiquidRate} Liquid for ${tradeAmount} Renown`)
+      sounds.purchase()
     } else {
       showMessage('Not enough Liquid!')
     }
-  }, [tradeLiquid, tradeAmount, currentLiquidRate, showMessage])
+  }, [tradeLiquid, tradeAmount, currentLiquidRate, showMessage, sounds])
 
   const handleTradeCrystal = useCallback(() => {
     const success = tradeCrystal(tradeAmount)
     if (success) {
       showMessage(`Traded ${tradeAmount * currentCrystalRate} Crystal for ${tradeAmount} Renown`)
+      sounds.purchase()
     } else {
       showMessage('Not enough Crystal!')
     }
-  }, [tradeCrystal, tradeAmount, currentCrystalRate, showMessage])
+  }, [tradeCrystal, tradeAmount, currentCrystalRate, showMessage, sounds])
 
   const handlePurchase = useCallback((id: ShopItemId) => {
     const success = purchaseShopItem(id)

@@ -32,7 +32,7 @@ const RefineVFX = ({ position, type }: RefineVFXProps) => {
   const sounds = useSoundEngine()
 
   useEffect(() => {
-    sounds.refine()
+    sounds.refine(type as 'vapour' | 'liquid' | 'crystal')
   }, [sounds])
 
   const color = RESOURCE_COLORS[type] ?? '#ffffff'

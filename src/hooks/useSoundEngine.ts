@@ -104,12 +104,14 @@ export interface SoundEngine {
   explosion: () => void
   heal: () => void
   uiClick: () => void
-  refine: () => void
+  refine: (type?: 'vapour' | 'liquid' | 'crystal') => void
   anomaly: () => void
   bondMature: () => void
   purchase: () => void
   placeBlock: () => void
+  removeBlock: () => void
   blockDecay: () => void
+  formulaDiscovered: () => void
   calibrateHit: () => void
   calibrateMiss: () => void
   footstep: () => void
@@ -151,10 +153,19 @@ export function useSoundEngine(): SoundEngine {
       playClick()
     },
 
-    /** Crystal-like ping for refinement */
-    refine: () => {
-      playTone(880, 1760, 0.2, 'triangle', 0.08)
-      playTone(1320, 2640, 0.15, 'triangle', 0.04, 0.06)
+    /** Distinct ping per refine target: Vapour (airy/high), Liquid (watery/mid), Crystal (resonant/low-high combo) */
+    refine: (type) => {
+      if (type === 'liquid') {
+        playTone(500, 900, 0.22, 'sine', 0.09)
+        playTone(750, 1350, 0.16, 'sine', 0.05, 0.07)
+      } else if (type === 'crystal') {
+        playTone(660, 1320, 0.3, 'triangle', 0.1)
+        playTone(990, 1980, 0.22, 'triangle', 0.06, 0.08)
+        playTone(1320, 2640, 0.18, 'sine', 0.04, 0.16)
+      } else {
+        playTone(880, 1760, 0.2, 'triangle', 0.08)
+        playTone(1320, 2640, 0.15, 'triangle', 0.04, 0.06)
+      }
     },
 
     /** Low alarm for time anomalies */
@@ -184,10 +195,25 @@ export function useSoundEngine(): SoundEngine {
       playTone(400, 600, 0.04, 'triangle', 0.05)
     },
 
+    /** Sharp reverse-thud + crack for manual block removal */
+    removeBlock: () => {
+      playTone(300, 500, 0.05, 'triangle', 0.06)
+      playNoise(0.08, 500, 0.08)
+    },
+
     /** Soft puff sound for block decay */
     blockDecay: () => {
       playNoise(0.2, 600, 0.06)
       playTone(300, 100, 0.1, 'sine', 0.04)
+    },
+
+    /** Triumphant ascending fanfare for discovering a formula — the biggest reward moment */
+    formulaDiscovered: () => {
+      playTone(523, 523, 0.18, 'sine', 0.12)
+      setTimeout(() => playTone(659, 659, 0.18, 'sine', 0.12), 110)
+      setTimeout(() => playTone(784, 784, 0.18, 'sine', 0.12), 220)
+      setTimeout(() => playTone(1047, 1047, 0.4, 'sine', 0.14), 330)
+      setTimeout(() => playTone(1319, 2000, 0.5, 'triangle', 0.08), 340)
     },
 
     /** Calibration success ping */
