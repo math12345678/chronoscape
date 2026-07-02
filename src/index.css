@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+body {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Custom Keyframe Animations ─────────────────────── */
+
+@keyframes notif-float {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  60% { opacity: 1; transform: translateY(-20px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+}
+
+@keyframes particle-drift {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-100vh) translateX(50px) scale(0.5); opacity: 0; }
+}
+
+@keyframes pulse-glow-teal {
+  0%, 100% { box-shadow: 0 0 4px rgba(45, 212, 191, 0.2); border-color: rgba(45, 212, 191, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(45, 212, 191, 0.5); border-color: rgba(45, 212, 191, 0.6); }
+}
+
+@keyframes pulse-glow-yellow {
+  0%, 100% { box-shadow: 0 0 4px rgba(250, 204, 21, 0.2); border-color: rgba(250, 204, 21, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(250, 204, 21, 0.5); border-color: rgba(250, 204, 21, 0.6); }
+}
+
+@keyframes pulse-glow-green {
+  0%, 100% { box-shadow: 0 0 4px rgba(68, 204, 102, 0.2); border-color: rgba(68, 204, 102, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(68, 204, 102, 0.5); border-color: rgba(68, 204, 102, 0.6); }
+}
+
+@keyframes pulse-glow-violet {
+  0%, 100% { box-shadow: 0 0 4px rgba(170, 136, 255, 0.2); border-color: rgba(170, 136, 255, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(170, 136, 255, 0.5); border-color: rgba(170, 136, 255, 0.6); }
+}
+
+@keyframes pulse-glow-amber {
+  0%, 100% { box-shadow: 0 0 4px rgba(251, 191, 36, 0.2); border-color: rgba(251, 191, 36, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.5); border-color: rgba(251, 191, 36, 0.6); }
+}
+
+@keyframes fade-in-up {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modal-pop-in {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Glow Drop Shadows ──────────────────────────────── */
+
+.drop-shadow-glow-teal {
+  filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.6));
+}
+
+.drop-shadow-glow-yellow {
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.6));
+}
+
+.drop-shadow-glow-green {
+  filter: drop-shadow(0 0 6px rgba(68, 204, 102, 0.6));
+}
+
+.drop-shadow-glow-violet {
+  filter: drop-shadow(0 0 6px rgba(170, 136, 255, 0.6));
+}
+
+.drop-shadow-glow-amber {
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+}
+
+/* ── Animation Utility Classes ──────────────────────── */
+
+.animate-pulse-glow-teal {
+  animation: pulse-glow-teal 2s ease-in-out infinite;
+}
+
+.animate-pulse-glow-yellow {
+  animation: pulse-glow-yellow 2s ease-in-out infinite;
+}
+
+.animate-pulse-glow-green {
+  animation: pulse-glow-green 2s ease-in-out infinite;
+}
+
+.animate-pulse-glow-violet {
+  animation: pulse-glow-violet 2s ease-in-out infinite;
+}
+
+.animate-pulse-glow-amber {
+  animation: pulse-glow-amber 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
