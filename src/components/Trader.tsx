@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { getTerrainHeight } from '../terrain'
@@ -18,6 +18,11 @@ export const Trader = () => {
 
   const terrainY = getTerrainHeight(TRADER_POSITION[0], TRADER_POSITION[2])
   const traderPos: [number, number, number] = [TRADER_POSITION[0], terrainY, TRADER_POSITION[2]]
+
+  const userData = useMemo(
+    () => ({ interactable: true, type: 'trader' as const, prompt: '[T] Trade' }),
+    []
+  )
 
   // NPC animation
   useFrame((_, delta) => {
@@ -96,8 +101,8 @@ export const Trader = () => {
           <meshBasicMaterial color="#000" transparent opacity={0.15} depthWrite={false} />
         </mesh>
 
-        {/* Robed body */}
-        <mesh position={[0, 0.5, 0]} castShadow>
+        {/* Robed body — interactive for trading */}
+        <mesh position={[0, 0.5, 0]} castShadow userData={userData}>
           <cylinderGeometry args={[0.2, 0.25, 0.5, 8]} />
           <meshStandardMaterial color="#884466" roughness={0.8} />
         </mesh>

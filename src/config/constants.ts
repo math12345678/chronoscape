@@ -74,5 +74,3 @@ export const EXPLOSION_RADIUS = 3;      // blocks removed within this radius
 // ── Trading ────────────────────────────────────────────
 export const LIQUID_TO_RENOWN_RATE = 10;   // 10 Liquid → 1 Renown
 export const CRYSTAL_TO_RENOWN_RATE = 3;   // 3 Crystal → 1 Renown
-export const FORMULA_SLOT_COST = 5;        // Renown (future use)
-export const COSMETIC_COST = 3;            // Renown (future use)

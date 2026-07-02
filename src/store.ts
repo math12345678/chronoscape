@@ -52,10 +52,9 @@ export interface PlayerUpgrades {
 
 // ── Shop items ──────────────────────────────────────────
 
-export type ShopItemId = 'extraFormulaSlot' | 'capacitySurge' | 'blockColorGold' | 'blockColorRuby' | 'blockColorSapphire'
+export type ShopItemId = 'capacitySurge' | 'blockColorGold' | 'blockColorRuby' | 'blockColorSapphire'
 
 export interface ShopPurchases {
-  extraFormulaSlot: boolean
   capacitySurge: boolean
   blockColorGold: boolean
   blockColorRuby: boolean
@@ -226,7 +225,7 @@ export const useStore = create<GameState>()((set, get) => ({
   selectedBlockType: null,
   labOpen: false,
   upgrades: { capacityBoost: 0, haste: 0, magnitude: 0, endurance: 0 },
-  shopPurchases: { extraFormulaSlot: false, capacitySurge: false, blockColorGold: false, blockColorRuby: false, blockColorSapphire: false },
+  shopPurchases: { capacitySurge: false, blockColorGold: false, blockColorRuby: false, blockColorSapphire: false },
   marketState: { liquid: 1.0, crystal: 1.0, drift: 0 },
   timeBonds: [],
   selectedBlockColor: null,
@@ -597,7 +596,6 @@ export const useStore = create<GameState>()((set, get) => ({
     if (state.shopPurchases[id]) return false // already owned
 
     const costs: Record<ShopItemId, number> = {
-      extraFormulaSlot: 5,
       capacitySurge: 8,
       blockColorGold: 3,
       blockColorRuby: 3,

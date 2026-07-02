@@ -8,8 +8,8 @@ const HIRE_COST = 15 // Liquid units per hire
 const TASK_INFO: Record<NPCTask, { label: string; description: string; color: string }> = {
   idle: { label: 'Idle', description: 'Wanders the island', color: '#888' },
   harvester: { label: 'Harvester', description: 'Autonomously harvests Time Rifts', color: '#44ff88' },
-  builder: { label: 'Builder', description: 'Places blocks (future)', color: '#ffaa44' },
-  explorer: { label: 'Explorer', description: 'Maps the island (future)', color: '#4488ff' },
+  builder: { label: 'Builder', description: 'Places blocks', color: '#ffaa44' },
+  explorer: { label: 'Explorer', description: 'Tours the island', color: '#4488ff' },
 }
 
 interface HirePanelProps {

@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react'
 import { useStore } from '../../store'
 import type { ShopItemId } from '../../store'
 import { SHOP_BLOCK_COLORS } from '../../store'
-import { FORMULA_SLOT_COST } from '../../config/constants'
 import { useSoundEngine } from '../../hooks/useSoundEngine'
 
 const SHOP_ITEMS: {
@@ -14,14 +13,6 @@ const SHOP_ITEMS: {
   color: string
   blockColor?: string
 }[] = [
-  {
-    id: 'extraFormulaSlot',
-    label: 'Extra Formula Slot',
-    description: 'Unlock an additional calibration slot in the Lab',
-    icon: '◆',
-    cost: FORMULA_SLOT_COST,
-    color: '#aa88ff',
-  },
   {
     id: 'capacitySurge',
     label: 'Capacity Surge',
