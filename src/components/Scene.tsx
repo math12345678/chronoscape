@@ -22,6 +22,7 @@ import { EnvironmentSystem } from './EnvironmentSystem'
 import { BuildGrid } from './Building/BuildGrid'
 import { applyShake, useShakeStore } from '../hooks/useScreenShake'
 import { TimeManager } from './TimeManager'
+import { OnboardingCompass } from './OnboardingCompass'
 
 /**
  * Applies screen shake to the camera each frame.
@@ -103,6 +104,7 @@ export const Scene = () => {
       <World />
       <PlayerController />
       <InteractionScanner />
+      <OnboardingCompass />
 
       {/* Visual enhancements */}
       <Starfield />

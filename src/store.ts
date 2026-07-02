@@ -115,6 +115,8 @@ export interface GameState {
   formulas: FormulaProgress[]
   npcs: NPCData[]
   interactionTarget: InteractionTarget | null
+  onboardingRiftBearing: number | null
+  setOnboardingRiftBearing: (bearing: number | null) => void
   selectedBlockType: BlockType | null
   labOpen: boolean
   // New systems
@@ -222,6 +224,8 @@ export const useStore = create<GameState>()((set, get) => ({
   formulas: INITIAL_FORMULAS,
   npcs: [],
   interactionTarget: null,
+  onboardingRiftBearing: null,
+  setOnboardingRiftBearing: (bearing) => set({ onboardingRiftBearing: bearing }),
   selectedBlockType: null,
   labOpen: false,
   upgrades: { capacityBoost: 0, haste: 0, magnitude: 0, endurance: 0 },
