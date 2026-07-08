@@ -147,10 +147,15 @@ export function getEnemyMeshes(): THREE.Mesh[] {
   return Array.from(enemies.values()).map(e => e.mesh)
 }
 
+/** Hard ceiling on simultaneous enemies — prevents unbounded growth from boss minion
+ *  bursts and event spawners stacking on top of the ambient spawn cap. */
+const MAX_ENEMIES = 40
+
 /** Spawn an enemy near position */
 export function spawnEnemy(type: EnemyType, x: number, z: number): string {
   const cfg = ENEMIES[type]
   if (!cfg) return ''
+  if (enemies.size >= MAX_ENEMIES) return ''
   const id = `enemy_${nextId++}`
   const y = getInfiniteTerrainHeight(x, z)
   const pos = new THREE.Vector3(x, y, z)

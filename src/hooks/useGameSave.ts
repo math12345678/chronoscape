@@ -33,6 +33,19 @@ import { serializeWorldEvents, loadWorldEvents } from '../systems/DynamicWorldEv
 import { serializeChronovate, loadChronovate } from '../systems/ChronovateAI'
 import { serializeConstructs, loadConstructs } from '../systems/AutomationConstructs'
 import { serializeOutposts, loadOutposts } from '../systems/ChronoOutposts'
+import { serializeCasinoStats, loadCasinoStats } from '../systems/Casino'
+import { serializeBestiary, loadBestiary } from '../systems/ChronoBestiary'
+import { serializeCalendar, loadCalendar } from '../systems/CalendarEvents'
+import { serializeCombatSkills, loadCombatSkills } from '../systems/ChronoCombatSkills'
+import { serializeCompanions, loadCompanions } from '../systems/TimeCompanions'
+import { serializeCraftingState, loadCraftingState } from '../systems/CraftingSystem'
+import { serializeFactions, loadFactions } from '../systems/FactionAlliances'
+import { serializePOIs, loadPOIs } from '../systems/POISystem'
+import { serializeResearch, loadResearch } from '../systems/ResearchLab'
+import { serializeTalentState, loadTalentState } from '../systems/ChronoTalents'
+import { serializeTechWeb, loadTechWeb } from '../systems/TechWeb'
+import { serializeAutomation, loadAutomation } from '../systems/AutomationHub'
+import { serializeBossState, loadBossState } from '../systems/WorldBossEvents'
 
 // ── Types ──────────────────────────────────────────────
 
@@ -85,6 +98,19 @@ interface SaveData {
   chronovate: ReturnType<typeof serializeChronovate>
   constructs: ReturnType<typeof serializeConstructs>
   outposts: ReturnType<typeof serializeOutposts>
+  casinoStats: ReturnType<typeof serializeCasinoStats>
+  bestiary: ReturnType<typeof serializeBestiary>
+  calendar: ReturnType<typeof serializeCalendar>
+  combatSkills: ReturnType<typeof serializeCombatSkills>
+  companions: ReturnType<typeof serializeCompanions>
+  craftingState: ReturnType<typeof serializeCraftingState>
+  factions: ReturnType<typeof serializeFactions>
+  pois: ReturnType<typeof serializePOIs>
+  research: ReturnType<typeof serializeResearch>
+  talentState: ReturnType<typeof serializeTalentState>
+  techWeb: ReturnType<typeof serializeTechWeb>
+  automation: ReturnType<typeof serializeAutomation>
+  bossState: ReturnType<typeof serializeBossState>
 }
 
 const SAVE_KEY = 'chronoscape-save'
@@ -172,6 +198,19 @@ function saveToDisk(): SaveData | null {
       chronovate: serializeChronovate(),
       constructs: serializeConstructs(),
       outposts: serializeOutposts(),
+      casinoStats: serializeCasinoStats(),
+      bestiary: serializeBestiary(),
+      calendar: serializeCalendar(),
+      combatSkills: serializeCombatSkills(),
+      companions: serializeCompanions(),
+      craftingState: serializeCraftingState(),
+      factions: serializeFactions(),
+      pois: serializePOIs(),
+      research: serializeResearch(),
+      talentState: serializeTalentState(),
+      techWeb: serializeTechWeb(),
+      automation: serializeAutomation(),
+      bossState: serializeBossState(),
     }
     localStorage.setItem(SAVE_KEY, JSON.stringify(data))
     return data
@@ -251,6 +290,19 @@ function loadFromDisk(): boolean {
     if (data.chronovate) loadChronovate(data.chronovate)
     if (data.constructs) loadConstructs(data.constructs)
     if (data.outposts) loadOutposts(data.outposts)
+    if (data.casinoStats) loadCasinoStats(data.casinoStats)
+    if (data.bestiary) loadBestiary(data.bestiary)
+    if (data.calendar) loadCalendar(data.calendar)
+    if (data.combatSkills) loadCombatSkills(data.combatSkills)
+    if (data.companions) loadCompanions(data.companions)
+    if (data.craftingState) loadCraftingState(data.craftingState)
+    if (data.factions) loadFactions(data.factions)
+    if (data.pois) loadPOIs(data.pois)
+    if (data.research) loadResearch(data.research)
+    if (data.talentState) loadTalentState(data.talentState)
+    if (data.techWeb) loadTechWeb(data.techWeb)
+    if (data.automation) loadAutomation(data.automation)
+    if (data.bossState) loadBossState(data.bossState as { bossesKilled: number; lastBossKillTime: number })
 
     return true
   } catch (err) {
