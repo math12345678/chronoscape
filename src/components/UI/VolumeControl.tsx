@@ -16,7 +16,7 @@ export const VolumeControl = () => {
   }
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 flex items-center gap-2">
+    <div className="fixed bottom-3 right-24 z-50 flex items-center gap-2">
       {open && (
         <div className="bg-gray-950/80 backdrop-blur-sm border border-gray-800/50 rounded-lg px-3 py-2 flex items-center gap-2 shadow-2xl">
           <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Music</span>

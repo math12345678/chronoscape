@@ -3,14 +3,20 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
 import { useSoundEngine } from '../hooks/useSoundEngine'
+import { spawnShockwave } from './ShockwaveRing'
 import type { BlockType } from '../store'
 
-const PARTICLE_COUNT = 15
-const DURATION = 0.5
+const PARTICLE_COUNT = 20
+const DURATION = 0.6
 
 const BLOCK_COLORS: Record<string, string> = {
   vapour: '#ffaa00',
   crystal: '#aa88ff',
+}
+
+const BLOCK_EMISSIVE: Record<string, string> = {
+  vapour: '#ffaa00',
+  crystal: '#cc88ff',
 }
 
 /**
@@ -27,9 +33,24 @@ const BlockPlaceEffect = ({ position, type }: { position: [number, number, numbe
 
   useEffect(() => {
     sounds.placeBlock()
-  }, [sounds])
+    // Ground ripple shockwave
+    spawnShockwave({ position: [position[0], position[1] - 0.5, position[2]], color: type === 'crystal' ? '#aa88ff' : '#ffaa00', duration: 0.4, maxScale: 4, ringCount: 2 })
+    // Brief flash
+    const flash = document.getElementById('block-flash') || (() => {
+      const el = document.createElement('div')
+      el.id = 'block-flash'
+      el.style.cssText = 'position:fixed;inset:0;background:transparent;pointer-events:none;z-index:9998;transition:opacity 0.15s ease-out'
+      document.body.appendChild(el)
+      return el
+    })()
+    flash.style.background = type === 'crystal' ? '#aa88ff' : '#ffaa00'
+    flash.style.opacity = '0.15'
+    requestAnimationFrame(() => { flash.style.opacity = '0' })
+    setTimeout(() => { if (flash.parentNode) flash.parentNode.removeChild(flash) }, 200)
+  }, [sounds, type])
 
   const color = BLOCK_COLORS[type] ?? '#ffffff'
+  const emissive = BLOCK_EMISSIVE[type] ?? '#ffffff'
 
   const { particles, geometry } = useMemo(() => {
     const posArray = new Float32Array(PARTICLE_COUNT * 3)
@@ -41,12 +62,13 @@ const BlockPlaceEffect = ({ position, type }: { position: [number, number, numbe
     geo.setAttribute('color', new THREE.BufferAttribute(colArray, 3))
 
     const baseColor = new THREE.Color(color)
+    const whiteColor = new THREE.Color('#ffffff')
     const parts: { velocity: THREE.Vector3; maxLife: number }[] = []
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const theta = Math.random() * Math.PI * 2
       const phi = Math.random() * Math.PI
-      const speed = 1 + Math.random() * 3
+      const speed = 2 + Math.random() * 4
       parts.push({
         velocity: new THREE.Vector3(
           Math.sin(phi) * Math.cos(theta) * speed,
@@ -56,10 +78,8 @@ const BlockPlaceEffect = ({ position, type }: { position: [number, number, numbe
         maxLife: DURATION * (0.4 + Math.random() * 0.6),
       })
 
-      const variant = baseColor.clone()
-      const hsl = { h: 0, s: 0, l: 0 }
-      variant.getHSL(hsl)
-      variant.setHSL(hsl.h, hsl.s, hsl.l + (Math.random() - 0.5) * 0.15)
+      // Mix between block color and white for sparkle
+      const variant = baseColor.clone().lerp(whiteColor, Math.random() * 0.4)
       colArray[i * 3] = variant.r
       colArray[i * 3 + 1] = variant.g
       colArray[i * 3 + 2] = variant.b
@@ -103,24 +123,26 @@ const BlockPlaceEffect = ({ position, type }: { position: [number, number, numbe
 
   return (
     <group ref={groupRef} position={position} scale={[0, 0, 0]}>
-      {/* Glow flash */}
+      {/* Glow flash — expands and fades */}
       <mesh>
-        <boxGeometry args={[1.2, 1.2, 1.2]} />
+        <boxGeometry args={[1.3, 1.3, 1.3]} />
         <meshBasicMaterial
-          color={color}
+          color={emissive}
           transparent
-          opacity={0.3}
+          opacity={0.4}
           depthWrite={false}
         />
       </mesh>
       
-      {/* Solid pop-in block */}
+      {/* Solid pop-in block with enhanced material */}
       <mesh>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial 
           color={color} 
-          roughness={0.6} 
-          metalness={0.1}
+          emissive={emissive}
+          emissiveIntensity={0.5}
+          roughness={0.4} 
+          metalness={0.2}
         />
       </mesh>
 

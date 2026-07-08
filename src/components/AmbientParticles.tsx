@@ -1,10 +1,13 @@
 import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useStore } from '../store'
+import { useFrameThrottled } from '../hooks/useFrameThrottled'
+import { getTimeScale } from './TimeManager'
 
-const PARTICLE_COUNT = 150
+const BASE_COUNT = 80
 const SPREAD = 50
+
+// Adjust particle count dynamically
+let PARTICLE_COUNT = BASE_COUNT
 
 /**
  * Floating ambient particles that drift gently around the island.
@@ -45,8 +48,8 @@ export const AmbientParticles = () => {
     return { geometry: geo, phases: ph }
   }, [])
 
-  useFrame((_, baseDelta) => {
-    const delta = baseDelta * useStore.getState().timeScale
+  useFrameThrottled((_, baseDelta) => {
+    const delta = baseDelta * getTimeScale()
     time.current += delta
 
     if (!pointsRef.current) return
@@ -76,7 +79,7 @@ export const AmbientParticles = () => {
 
     geometry.attributes.position.needsUpdate = true
     geometry.attributes.opacity.needsUpdate = true
-  })
+  }, 2) // throttled: ambient particles, every ~2nd frame
 
   return (
     <points ref={pointsRef} frustumCulled={false}>

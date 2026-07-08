@@ -1,9 +1,10 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { getTerrainHeight } from '../terrain'
+import { useStore } from '../store'
 
-export const TRADER_POSITION: [number, number, number] = [-12, 0, -8]
+export const TRADER_POSITION: [number, number, number] = [-30, 0, -15]
 
 /**
  * Trader booth with a living NPC merchant character.
@@ -14,15 +15,24 @@ export const Trader = () => {
   const traderRef = useRef<THREE.Group>(null)
   const armLeftRef = useRef<THREE.Group>(null)
   const armRightRef = useRef<THREE.Group>(null)
+  const coinRef = useRef<THREE.Mesh>(null)
   const time = useRef(Math.random() * 100)
 
   const terrainY = getTerrainHeight(TRADER_POSITION[0], TRADER_POSITION[2])
   const traderPos: [number, number, number] = [TRADER_POSITION[0], terrainY, TRADER_POSITION[2]]
 
+  const requestOpenPanel = useStore((s) => s.requestOpenPanel)
+  const inventory = useStore((s) => s.inventory)
+  const hasGoodsToTrade = inventory.raw >= 10 || inventory.vapour >= 5 || inventory.liquid >= 3 || inventory.crystal >= 1
+
   const userData = useMemo(
     () => ({ interactable: true, type: 'trader' as const, prompt: '[T] Trade' }),
     []
   )
+
+  const handleClick = useCallback(() => {
+    requestOpenPanel('trade')
+  }, [requestOpenPanel])
 
   // NPC animation
   useFrame((_, delta) => {
@@ -34,12 +44,26 @@ export const Trader = () => {
     traderRef.current.position.x = traderPos[0] + Math.sin(time.current * 0.5) * 0.03
     traderRef.current.rotation.y = Math.sin(time.current * 0.3) * 0.2
 
-    // Arm gesturing
+    // Coin glow — brighter when you have goods to trade
+    if (coinRef.current) {
+      const mat = coinRef.current.material as THREE.MeshStandardMaterial
+      const interestBoost = hasGoodsToTrade ? 0.5 : 0
+      mat.emissiveIntensity = 0.3 + Math.sin(time.current * 2) * (0.15 + interestBoost * 0.3)
+      if (hasGoodsToTrade) {
+        mat.emissive.setHex(0xffdd44)
+      } else {
+        mat.emissive.setHex(0xffaa00)
+      }
+    }
+
+    // Arm gesturing — more animated when you have goods
     if (armLeftRef.current) {
-      armLeftRef.current.rotation.x = Math.sin(time.current * 0.5) * 0.1 + 0.2
+      const speed = hasGoodsToTrade ? 1.2 : 0.5
+      armLeftRef.current.rotation.x = Math.sin(time.current * speed) * 0.15 + 0.2
     }
     if (armRightRef.current) {
-      armRightRef.current.rotation.x = Math.sin(time.current * 0.5 + Math.PI) * 0.05 + 0.15
+      const speed = hasGoodsToTrade ? 1.2 : 0.5
+      armRightRef.current.rotation.x = Math.sin(time.current * speed + Math.PI) * 0.08 + 0.15
     }
   })
 
@@ -71,8 +95,8 @@ export const Trader = () => {
         <meshStandardMaterial color="#cc8844" roughness={0.6} />
       </mesh>
 
-      {/* Renown symbol — floating coin */}
-      <mesh position={[0, 1.0, 0.6]} rotation={[0, 0, Math.PI / 2]}>
+      {/* Renown symbol — floating coin (pulses when you have goods) */}
+      <mesh ref={coinRef} position={[0, 1.0, 0.6]} rotation={[0, 0, Math.PI / 2]}>
         <torusGeometry args={[0.15, 0.04, 8, 12]} />
         <meshStandardMaterial color="#ffcc44" emissive="#ffaa00" emissiveIntensity={0.3} metalness={0.6} roughness={0.2} />
       </mesh>
@@ -102,7 +126,7 @@ export const Trader = () => {
         </mesh>
 
         {/* Robed body — interactive for trading */}
-        <mesh position={[0, 0.5, 0]} castShadow userData={userData}>
+        <mesh position={[0, 0.5, 0]} castShadow onClick={handleClick} userData={userData}>
           <cylinderGeometry args={[0.2, 0.25, 0.5, 8]} />
           <meshStandardMaterial color="#884466" roughness={0.8} />
         </mesh>
@@ -121,7 +145,7 @@ export const Trader = () => {
 
         {/* Turban hat */}
         <mesh position={[0, 0.86, 0]} castShadow>
-          <sphereGeometry args={[0.15, 0.1, 0.1, 8]} />
+          <sphereGeometry args={[0.15, 8, 8]} />
           <meshStandardMaterial color="#cc8844" roughness={0.9} />
         </mesh>
         {/* Turban wrap */}

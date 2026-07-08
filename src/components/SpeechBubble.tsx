@@ -148,13 +148,39 @@ export const SpeechBubble = ({
  * Each NPC gets a contextual status message.
  */
 export const NPC_SPEECHES: Record<string, string[]> = {
-  idle: ['...', '...', '... watching the sky'],
-  wander: ['Where should I go?', 'Exploring...', 'Nice day for a walk'],
-  seek_rift: ['I sense a rift!', 'Over there!', 'Time energy...'],
-  harvest: ['Got some!', 'Harvesting...', 'So much time!'],
+  idle: ['...', '...', '... watching the sky', 'Just thinking', 'Peaceful today'],
+  wander: ['Where should I go?', 'Exploring...', 'Nice day for a walk', 'The path unwinds'],
+  seek_rift: ['I sense a rift!', 'Over there!', 'Time energy...', 'Follow me!'],
+  harvest: ['Got some!', 'Harvesting...', 'So much time!', 'This feels powerful'],
   return: ['Taking it back', 'On my way', 'Almost there...'],
-  rest: ['Need a break...', 'So tired...', 'Just resting'],
-  tour: ['Beautiful view!', 'I love this place', 'Have you seen the view?'],
+  rest: ['Need a break...', 'So tired...', 'Just resting', 'A moment to breathe'],
+  tour: ['Beautiful view!', 'I love this place', 'Have you seen the view?', 'Breathtaking!'],
+  interacting: [
+    'Hello!', 'Nice day, isn\'t it?', 'Have you seen the rift?',
+    'I was just thinking...', 'The time flows strangely today',
+    'Did you feel that?', 'I should get back to work',
+    'Have you visited the Lab?', 'The Shrine is calling',
+    'We should talk again soon',
+  ],
+  follow: ['Waiting for you', 'I\'ll follow', 'Where to?', 'Right behind you', 'On your lead'],
+  seek_shelter: ['Getting dark...', 'Time to find shelter', 'The night is coming', 'I should take cover'],
+}
+
+/** Night-time speeches — more contemplative and chatty */
+export const NIGHT_SPEECHES: Record<string, string[]> = {
+  idle: ['The stars are beautiful...', 'Can you hear the night?', 'So quiet...', 'Time sleeps too'],
+  wander: ['I should find shelter', 'It\'s getting cold', 'Where is everyone?', 'The dark is deep'],
+  seek_shelter: ['Almost there!', 'Just a bit further', 'The light...', 'This way!'],
+  rest: ['Finally safe', 'The night is long', 'I\'ll rest here', 'Listening to the dark'],
+  seek_rift: ['Rifts glow brighter at night', 'I see it!', 'The time energy pulses'],
+  tour: ['So different at night', 'Everything changes', 'The world looks new'],
+  interacting: [
+    'It\'s getting dark...', 'Should we head to shelter?',
+    'I don\'t like the night alone', 'The Lab has light',
+    'Let\'s stay close', 'The Shrine glows warmly',
+    'We should gather together',
+  ],
+  follow: ['Stay close', 'Don\'t wander off', 'I\'m right here', 'The dark is safer together'],
 }
 
 export const NPC_NAMES = [

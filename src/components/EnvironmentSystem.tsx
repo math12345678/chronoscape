@@ -1,14 +1,15 @@
 import { useMemo, useRef, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrameThrottled } from '../hooks/useFrameThrottled'
 import * as THREE from 'three'
 import { getTerrainHeight } from '../terrain'
 import { ISLAND_SIZE } from '../config/constants'
 import { useSoundEngine } from '../hooks/useSoundEngine'
-import { useStore } from '../store'
+import { getTimeScale } from './TimeManager'
+import { getDayFactor as getDayNightFactor } from './DayNightCycle'
 
 // ── Fireflies ───────────────────────────────────────────
 
-const FIREFLY_COUNT = 40
+const FIREFLY_COUNT = 15
 
 const FireflySwarm = () => {
   const pointsRef = useRef<THREE.Points>(null)
@@ -54,8 +55,8 @@ const FireflySwarm = () => {
     return { geometry: geo, velocities: vel }
   }, [])
 
-  useFrame((_, baseDelta) => {
-    const delta = baseDelta * useStore.getState().timeScale
+  useFrameThrottled((_, baseDelta) => {
+    const delta = baseDelta * getTimeScale()
     time.current += delta
     if (!pointsRef.current) return
 
@@ -77,7 +78,7 @@ const FireflySwarm = () => {
 
     geometry.attributes.position.needsUpdate = true
     geometry.attributes.size.needsUpdate = true
-  })
+  }, 3)
 
   return (
     <points ref={pointsRef} frustumCulled={false}>
@@ -111,8 +112,8 @@ const Butterfly = ({ data }: { data: ButterflyData }) => {
   const groupRef = useRef<THREE.Group>(null)
   const time = useRef(Math.random() * 100)
 
-  useFrame((_, baseDelta) => {
-    const delta = baseDelta * useStore.getState().timeScale
+  useFrameThrottled((_, baseDelta) => {
+    const delta = baseDelta * getTimeScale()
     time.current += delta
     if (!groupRef.current) return
 
@@ -127,7 +128,7 @@ const Butterfly = ({ data }: { data: ButterflyData }) => {
     // Wing flap
     const flap = Math.sin(t * 8) * 0.4 + 0.6
     groupRef.current.scale.y = flap * data.scale
-  })
+  }, 3)
 
   return (
     <group ref={groupRef} position={data.pos}>
@@ -180,7 +181,7 @@ const ButterflySwarm = () => {
 
 // ── Flower Clusters ─────────────────────────────────────
 
-const FLOWER_COUNT = 30
+const FLOWER_COUNT = 16
 
 const FlowerClusters = () => {
   const flowers = useMemo(() => {
@@ -241,7 +242,7 @@ const FlowerClusters = () => {
 const MossPatches = () => {
   const patches = useMemo(() => {
     const result: { pos: [number, number, number]; size: number }[] = []
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 30; i++) {
       const x = (Math.random() - 0.5) * ISLAND_SIZE * 0.75
       const z = (Math.random() - 0.5) * ISLAND_SIZE * 0.75
       const y = getTerrainHeight(x, z)
@@ -271,18 +272,67 @@ const MossPatches = () => {
  * - Butterfly entities (simple wing-flap animation)
  * - Flower clusters (colorful scattered flowers)
  * - Moss patches (subtle ground texture)
+ * - Ambient audio: wind, birdsong (day), crickets (night), wind gusts
  */
 export const EnvironmentSystem = () => {
   const sounds = useSoundEngine()
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>
+    // Wind — periodic soft howls (more frequent for richer atmosphere)
+    let windTimer: ReturnType<typeof setTimeout>
     const playWind = () => {
       sounds.ambientWind()
-      timer = setTimeout(playWind, 8000 + Math.random() * 8000)
+      windTimer = setTimeout(playWind, 6000 + Math.random() * 6000)
     }
-    timer = setTimeout(playWind, 2000)
-    return () => clearTimeout(timer)
+    windTimer = setTimeout(playWind, 1500)
+
+    // Birdsong — melodic chirps during daytime (2-6s intervals)
+    let birdTimer: ReturnType<typeof setTimeout>
+    const playBird = () => {
+      const hour = getDayFactor()
+      if (hour > 0.25) {
+        sounds.birdsong()
+      }
+      birdTimer = setTimeout(playBird, 2000 + Math.random() * 4000)
+    }
+    birdTimer = setTimeout(playBird, 3000)
+
+    // Wind gusts — occasional stronger wind bursts (10-25s intervals)
+    let gustTimer: ReturnType<typeof setTimeout>
+    const playGust = () => {
+      sounds.windGust()
+      gustTimer = setTimeout(playGust, 10000 + Math.random() * 15000)
+    }
+    gustTimer = setTimeout(playGust, 8000)
+
+    // Crickets — night-time ambient chirping (faster interval)
+    let cricketTimer: ReturnType<typeof setTimeout>
+    const playCrickets = () => {
+      const hour = getDayFactor()
+      if (hour < 0.35) {
+        sounds.crickets()
+      }
+      cricketTimer = setTimeout(playCrickets, 1500 + Math.random() * 2500)
+    }
+    cricketTimer = setTimeout(playCrickets, 4000)
+
+    // NPC chatter — distant murmurs near landmarks
+    let chatterTimer: ReturnType<typeof setTimeout>
+    const playChatter = () => {
+      if (Math.random() < 0.4) {
+        sounds.npcChatter()
+      }
+      chatterTimer = setTimeout(playChatter, 12000 + Math.random() * 12000)
+    }
+    chatterTimer = setTimeout(playChatter, 6000)
+
+    return () => {
+      clearTimeout(windTimer)
+      clearTimeout(birdTimer)
+      clearTimeout(gustTimer)
+      clearTimeout(cricketTimer)
+      clearTimeout(chatterTimer)
+    }
   }, [sounds])
 
   return (
@@ -293,4 +343,9 @@ export const EnvironmentSystem = () => {
       <ButterflySwarm />
     </group>
   )
+}
+
+/** Read the current day factor from DayNightCycle module-level variable */
+function getDayFactor(): number {
+  return getDayNightFactor()
 }

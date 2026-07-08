@@ -15,7 +15,6 @@ const DecayPuff = ({ position }: { position: [number, number, number] }) => {
   const pointsRef = useRef<THREE.Points>(null)
   const matRef = useRef<THREE.PointsMaterial>(null)
   const elapsed = useRef(0)
-  const done = useRef(false)
   const soundPlayed = useRef(false)
   const sounds = useSoundEngine()
 

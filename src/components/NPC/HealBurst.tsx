@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -33,10 +33,6 @@ export const HealBurst = ({ position, onComplete }: HealBurstProps) => {
     ]
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.random() * Math.PI * 0.5
-      const speed = 1.5 + Math.random() * 3
-
       posArray[i * 3] = (Math.random() - 0.5) * 0.3
       posArray[i * 3 + 1] = Math.random() * 0.3
       posArray[i * 3 + 2] = (Math.random() - 0.5) * 0.3

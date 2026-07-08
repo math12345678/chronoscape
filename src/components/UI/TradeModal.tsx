@@ -3,7 +3,8 @@ import { useStore } from '../../store'
 import type { ShopItemId } from '../../store'
 import { SHOP_BLOCK_COLORS } from '../../store'
 import { useSoundEngine } from '../../hooks/useSoundEngine'
-import { useModalClose } from '../../hooks/useModalClose'
+import { unlockTradeAchievement } from './ToastNotifications'
+import { AnimatedPanel } from './AnimatedPanel'
 
 const SHOP_ITEMS: {
   id: ShopItemId
@@ -12,7 +13,6 @@ const SHOP_ITEMS: {
   icon: string
   cost: number
   color: string
-  blockColor?: string
 }[] = [
   {
     id: 'capacitySurge',
@@ -22,38 +22,23 @@ const SHOP_ITEMS: {
     cost: 8,
     color: '#ff8844',
   },
-  {
-    id: 'blockColorGold',
-    label: 'Gold Block Skin',
-    description: 'Recolor your blocks in gleaming gold',
+  // ── Block color skins (one per color in palette) ──
+  ...Object.entries(SHOP_BLOCK_COLORS).map(([key, val]) => ({
+    id: `blockColor${key.charAt(0).toUpperCase() + key.slice(1)}` as ShopItemId,
+    label: `${val.label} Block Skin`,
+    description: `Recolor your blocks in ${val.label.toLowerCase()}`,
     icon: '✦',
     cost: 3,
-    color: '#ffd700',
-  },
-  {
-    id: 'blockColorRuby',
-    label: 'Ruby Block Skin',
-    description: 'Recolor your blocks in fiery ruby red',
-    icon: '✦',
-    cost: 3,
-    color: '#ff4466',
-  },
-  {
-    id: 'blockColorSapphire',
-    label: 'Sapphire Block Skin',
-    description: 'Recolor your blocks in deep sapphire blue',
-    icon: '✦',
-    cost: 3,
-    color: '#4488ff',
-  },
+    color: val.vapour,
+  })),
 ]
 
 interface TradeModalProps {
+  open: boolean
   onClose: () => void
 }
 
-export const TradeModal = ({ onClose }: TradeModalProps) => {
-  const { closing, requestClose } = useModalClose(onClose)
+export const TradeModal = ({ open, onClose }: TradeModalProps) => {
   const inventory = useStore((s) => s.inventory)
   const tradeLiquid = useStore((s) => s.tradeLiquidForRenown)
   const tradeCrystal = useStore((s) => s.tradeCrystalForRenown)
@@ -90,6 +75,7 @@ export const TradeModal = ({ onClose }: TradeModalProps) => {
     if (success) {
       showMessage(`Traded ${tradeAmount * currentLiquidRate} Liquid for ${tradeAmount} Renown`)
       sounds.purchase()
+      unlockTradeAchievement()
     } else {
       showMessage('Not enough Liquid!')
     }
@@ -100,6 +86,7 @@ export const TradeModal = ({ onClose }: TradeModalProps) => {
     if (success) {
       showMessage(`Traded ${tradeAmount * currentCrystalRate} Crystal for ${tradeAmount} Renown`)
       sounds.purchase()
+      unlockTradeAchievement()
     } else {
       showMessage('Not enough Crystal!')
     }
@@ -129,33 +116,19 @@ export const TradeModal = ({ onClose }: TradeModalProps) => {
   }
 
   return (
-    <>
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-150"
-        style={{ opacity: closing ? 0 : 1 }}
-        onClick={requestClose}
-      />
-      <div
-        className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          animation: closing ? undefined : 'modal-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          transition: 'opacity 0.18s ease, transform 0.18s ease',
-          opacity: closing ? 0 : 1,
-          transform: closing ? 'translate(-50%, -50%) scale(0.95)' : 'translate(-50%, -50%) scale(1)',
-        }}
-      >
-        <div className="bg-gray-900/95 border border-yellow-700/40 rounded-xl shadow-2xl shadow-yellow-500/10 overflow-hidden" style={{ width: 420, maxHeight: '85vh' }}>
+    <AnimatedPanel open={open} onClose={onClose} className="z-50" slideFrom="up">
+      <div className="bg-gray-900/95 border border-yellow-700/40 rounded-xl shadow-2xl shadow-yellow-500/10 overflow-hidden" style={{ width: 420, maxHeight: '85vh' }}>
           {/* Header */}
           <div className="px-5 py-4 border-b border-yellow-800/30 flex items-center justify-between bg-gradient-to-r from-yellow-950/30 to-gray-900">
             <div>
               <h2 className="text-white font-bold text-lg tracking-wide flex items-center gap-2">
-                <span className="text-yellow-400">⟐</span> Time Trader
+                <span className="text-yellow-400">⟐</span> Publisher
               </h2>
               <p className="text-gray-500 text-xs mt-0.5">
-                Convert resources — prices fluctuate with supply
+                Publish research data for citations — prices fluctuate with demand
               </p>
             </div>
-            <button onClick={requestClose} className="text-gray-500 hover:text-white p-1 rounded hover:bg-gray-800">
+            <button onClick={onClose} className="text-gray-500 hover:text-white p-1 rounded hover:bg-gray-800">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4l10 10M14 4l-10 10" />
               </svg>
@@ -279,7 +252,7 @@ export const TradeModal = ({ onClose }: TradeModalProps) => {
               </>
             ) : (
               <>
-                {/* Shop */}
+                {/* Shop — all items including all 12 block colors */}
                 <div className="space-y-2">
                   {SHOP_ITEMS.map((item) => {
                     const owned = shopPurchases[item.id]
@@ -386,7 +359,6 @@ export const TradeModal = ({ onClose }: TradeModalProps) => {
             </p>
           </div>
         </div>
-      </div>
-    </>
+    </AnimatedPanel>
   )
 }

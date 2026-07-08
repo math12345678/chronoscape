@@ -8,8 +8,8 @@ const HOTBAR_SLOTS: {
   color: string
   key: string
 }[] = [
-  { type: 'vapour', label: 'Vapour', color: '#ffaa00', key: '1' },
-  { type: 'crystal', label: 'Crystal', color: '#aa88ff', key: '2' },
+  { type: 'vapour', label: 'Chrono', color: '#ffaa00', key: '1' },
+  { type: 'crystal', label: 'Aeon', color: '#aa88ff', key: '2' },
 ]
 
 export const Hotbar = () => {
@@ -19,7 +19,9 @@ export const Hotbar = () => {
   const formulaDiscovered = useStore((s) => s.formulaDiscovered)
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-50 select-none">
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-end gap-2 z-50 select-none">
+
+      {/* Block type slots */}
       {HOTBAR_SLOTS.map((slot) => {
         const isSelected = selectedBlockType === slot.type
         const isCrystal = slot.type === 'crystal'
@@ -48,16 +50,11 @@ export const Hotbar = () => {
             `}
             title={
               isLocked
-                ? 'Discover Crystallization in the Lab'
+                ? 'Discover Aeon Forging in the Lab'
                 : `${slot.label} Block (costs ${cost} ${slot.label})`
             }
           >
-            {/* Slot number */}
-            <span className="absolute top-1 left-2 text-[10px] text-gray-600 font-mono">
-              {slot.key}
-            </span>
-
-            {/* Block icon with glow when selected */}
+            <span className="absolute top-1 left-2 text-[10px] text-gray-600 font-mono">{slot.key}</span>
             <div
               className={`w-6 h-6 rounded-sm border mb-1 transition-all duration-300 ${isSelected ? 'shadow-lg' : ''}`}
               style={{
@@ -67,43 +64,25 @@ export const Hotbar = () => {
                 boxShadow: isSelected ? `0 0 12px ${slot.color}66` : 'none',
               }}
             />
-
-            {/* Label */}
             <span
               className="text-[10px] font-bold uppercase tracking-wider transition-colors duration-200"
               style={{ color: isLocked ? '#666' : slot.color }}
-            >
-              {isLocked ? '🔒' : slot.label}
-            </span>
-
-            {/* Count */}
-            <span className="text-[10px] text-gray-500 font-mono mt-0.5">
-              {isLocked ? '—' : Math.floor(amount)}
-            </span>
-
-            {/* Selection indicator with glow */}
+            >{isLocked ? '🔒' : slot.label}</span>
+            <span className="text-[10px] text-gray-500 font-mono mt-0.5">{isLocked ? '—' : Math.floor(amount)}</span>
             {isSelected && (
-              <div
-                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full"
-                style={{
-                  backgroundColor: slot.color,
-                  boxShadow: `0 0 8px ${slot.color}88`,
-                }}
-              />
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full" style={{ backgroundColor: slot.color, boxShadow: `0 0 8px ${slot.color}88` }} />
             )}
           </button>
         )
       })}
 
-      {/* Deselect button */}
+      {/* Deselect */}
       {selectedBlockType && (
         <button
           onClick={() => setSelectedBlockType(null)}
           className="ml-2 px-2 py-1 text-[10px] text-gray-500 hover:text-white bg-gray-900/70 border border-gray-700/50 rounded hover:bg-gray-800/80 transition-all hover:scale-110"
           title="Deselect (Esc)"
-        >
-          ✕
-        </button>
+        >✕</button>
       )}
     </div>
   )

@@ -1,8 +1,48 @@
-import { useRef } from 'react'
+import { useRef, useCallback, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../../store'
 import { LAB_POSITION } from '../../config/constants'
+import { getTerrainHeight } from '../../terrain'
+
+/** Sky beam for the lab — visible from spawn to guide the player */
+const LabSkyBeam = () => {
+  const beamRef = useRef<THREE.Mesh>(null)
+  const glowRef = useRef<THREE.Mesh>(null)
+  const time = useRef(0)
+
+  useFrame((_, delta) => {
+    time.current += delta
+    const t = time.current
+    if (beamRef.current) {
+      const pulse = 0.15 + Math.sin(t * 1.5) * 0.08
+      ;(beamRef.current.material as THREE.MeshBasicMaterial).opacity = pulse
+      const scale = 0.8 + Math.sin(t * 1.2) * 0.15
+      beamRef.current.scale.x = scale
+      beamRef.current.scale.z = scale
+    }
+    if (glowRef.current) {
+      const pulse = 0.06 + Math.sin(t * 0.8) * 0.03
+      ;(glowRef.current.material as THREE.MeshBasicMaterial).opacity = pulse
+      const scale = 2 + Math.sin(t * 0.6) * 0.5
+      glowRef.current.scale.x = scale
+      glowRef.current.scale.z = scale
+    }
+  })
+
+  return (
+    <group>
+      <mesh ref={beamRef} position={[0, 20, 0]}>
+        <cylinderGeometry args={[0.3, 2.0, 40, 8, 1]} />
+        <meshBasicMaterial color="#aa88ff" transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh ref={glowRef} position={[0, 20, 0]}>
+        <cylinderGeometry args={[1.5, 5.0, 40, 12, 1]} />
+        <meshBasicMaterial color="#8844ff" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  )
+}
 
 /**
  * The Lab — a fixed stone structure where players discover formulas.
@@ -18,7 +58,23 @@ export const LabStructure = () => {
   const ringRef2 = useRef<THREE.Mesh>(null)
 
   const formulas = useStore((s) => s.formulas)
+  const labOpen = useStore((s) => s.labOpen)
+  const openLab = useStore((s) => s.openLab)
   const hasUndiscovered = formulas.some((f) => !f.discovered)
+
+  const terrainY = getTerrainHeight(LAB_POSITION[0], LAB_POSITION[2])
+  const labPos: [number, number, number] = [LAB_POSITION[0], terrainY, LAB_POSITION[2]]
+
+  const handleClick = useCallback(() => {
+    if (!labOpen) {
+      openLab()
+    }
+  }, [labOpen, openLab])
+
+  const userData = useMemo(
+    () => ({ interactable: true, type: 'lab' as const, prompt: 'Enter the Lab' }),
+    [],
+  )
 
   useFrame((_, delta) => {
     time.current += delta
@@ -62,7 +118,9 @@ export const LabStructure = () => {
   })
 
   return (
-    <group position={LAB_POSITION}>
+    <group position={labPos}>
+      {/* Sky beam — visible from spawn so players know where to go */}
+      <LabSkyBeam />
       {/* Floor */}
       <mesh receiveShadow position={[0, -0.3, 0]}>
         <boxGeometry args={[6, 0.4, 6]} />
@@ -166,8 +224,8 @@ export const LabStructure = () => {
         />
       </mesh>
 
-      {/* Pedestal */}
-      <mesh receiveShadow position={[0, 0.3, -1]}>
+      {/* Interactive pedestal — click to open Lab */}
+      <mesh receiveShadow position={[0, 0.3, -1]} onClick={handleClick} userData={userData}>
         <cylinderGeometry args={[0.8, 1, 0.6, 8]} />
         <meshStandardMaterial color="#7a6a9a" roughness={0.7} />
       </mesh>

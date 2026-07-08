@@ -1,37 +1,30 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
+import { lockPointer, unlockPointer } from '../utils/pointerLock'
+import { healPlayer } from '../components/Combat/HealthTracker'
 
 interface KeyboardShortcutsProps {
   refinePanelOpen: boolean
   setRefinePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
-  hirePanelOpen?: boolean
-  setHirePanelOpen?: React.Dispatch<React.SetStateAction<boolean>>
-  tradePanelOpen?: boolean
-  setTradePanelOpen?: React.Dispatch<React.SetStateAction<boolean>>
-  shrinePanelOpen?: boolean
-  setShrinePanelOpen?: React.Dispatch<React.SetStateAction<boolean>>
+  closeAllPanels?: () => void
+  hasOpenPanels?: boolean
 }
 
 /**
- * Global keyboard shortcuts for the game.
+ * Simplified keyboard shortcuts — only the essentials.
  *
  * - `R` toggles the Refine Panel
- * - `H` toggles the Hire Panel
- * - `T` toggles the Trade Panel
- * - `I` toggles the Investment Panel (Time Shrine)
- * - `1` selects Vapour block in hotbar
- * - `2` selects Crystal block in hotbar (if discovered)
- * - `Escape` closes panels or deselects hotbar
+ * - `H` heals the player (costs 1 Liquid)
+ * - `1` toggles Vapour block
+ * - `2` toggles Crystal block (if discovered)
+ * - `Escape` releases/locks pointer
+ * - `Tab` opens the Game Menu Hub (handled in ControlsHub component)
  */
 export function useKeyboardShortcuts({
   refinePanelOpen,
   setRefinePanelOpen,
-  hirePanelOpen,
-  setHirePanelOpen,
-  tradePanelOpen,
-  setTradePanelOpen,
-  shrinePanelOpen,
-  setShrinePanelOpen,
+  closeAllPanels,
+  hasOpenPanels,
 }: KeyboardShortcutsProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -56,41 +49,17 @@ export function useKeyboardShortcuts({
         }
         case 'h': {
           e.preventDefault()
-          if (setHirePanelOpen) {
-            setHirePanelOpen((prev) => !prev)
-          }
-          break
-        }
-        case 't': {
-          e.preventDefault()
-          if (setTradePanelOpen) {
-            setTradePanelOpen((prev) => !prev)
-          }
-          break
-        }
-        case 'i': {
-          e.preventDefault()
-          if (setShrinePanelOpen) {
-            setShrinePanelOpen((prev) => !prev)
-          }
+          healPlayer()
           break
         }
         case 'escape': {
-          if (refinePanelOpen) {
-            e.preventDefault()
-            setRefinePanelOpen(false)
-          } else if (hirePanelOpen) {
-            e.preventDefault()
-            setHirePanelOpen?.(false)
-          } else if (tradePanelOpen) {
-            e.preventDefault()
-            setTradePanelOpen?.(false)
-          } else if (shrinePanelOpen) {
-            e.preventDefault()
-            setShrinePanelOpen?.(false)
-          } else if (state.selectedBlockType) {
-            e.preventDefault()
-            state.setSelectedBlockType(null)
+          e.preventDefault()
+          if (hasOpenPanels && closeAllPanels) {
+            closeAllPanels()
+          } else if (document.pointerLockElement) {
+            unlockPointer()
+          } else {
+            lockPointer()
           }
           break
         }
@@ -112,5 +81,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [refinePanelOpen, setRefinePanelOpen, hirePanelOpen, setHirePanelOpen, tradePanelOpen, setTradePanelOpen, shrinePanelOpen, setShrinePanelOpen])
+  }, [refinePanelOpen, setRefinePanelOpen, closeAllPanels, hasOpenPanels])
 }

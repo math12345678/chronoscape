@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useStore } from '../../store'
 import type { UpgradeId } from '../../store'
 import { useSoundEngine } from '../../hooks/useSoundEngine'
-import { useModalClose } from '../../hooks/useModalClose'
+import { AnimatedPanel } from '../UI/AnimatedPanel'
 
 const UPGRADE_INFO: Record<UpgradeId, {
   label: string
@@ -47,11 +47,11 @@ const UPGRADE_INFO: Record<UpgradeId, {
 }
 
 interface InvestmentPanelProps {
+  open: boolean
   onClose: () => void
 }
 
-export const InvestmentPanel = ({ onClose }: InvestmentPanelProps) => {
-  const { closing, requestClose } = useModalClose(onClose)
+export const InvestmentPanel = ({ open, onClose }: InvestmentPanelProps) => {
   const inventory = useStore((s) => s.inventory)
   const upgrades = useStore((s) => s.upgrades)
   const purchaseUpgrade = useStore((s) => s.purchaseUpgrade)
@@ -78,25 +78,8 @@ export const InvestmentPanel = ({ onClose }: InvestmentPanelProps) => {
   }, [upgrades, purchaseUpgrade, showMessage])
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-150"
-        style={{ opacity: closing ? 0 : 1 }}
-        onClick={requestClose}
-      />
-
-      {/* Panel */}
-      <div
-        className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{
-          animation: closing ? undefined : 'modal-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          transition: 'opacity 0.18s ease, transform 0.18s ease',
-          opacity: closing ? 0 : 1,
-          transform: closing ? 'translate(-50%, -50%) scale(0.95)' : 'translate(-50%, -50%) scale(1)',
-        }}
-      >
-        <div className="bg-gray-900/95 border border-amber-700/40 rounded-xl shadow-2xl shadow-amber-500/10 overflow-hidden" style={{ width: 420, maxHeight: '85vh' }}>
+    <AnimatedPanel open={open} onClose={onClose} className="z-50" slideFrom="up">
+      <div className="bg-gray-900/95 border border-amber-700/40 rounded-xl shadow-2xl shadow-amber-500/10 overflow-hidden" style={{ width: 420, maxHeight: '85vh' }}>
           {/* Header */}
           <div className="px-5 py-4 border-b border-amber-800/30 flex items-center justify-between bg-gradient-to-r from-amber-950/40 to-gray-900">
             <div>
@@ -107,7 +90,7 @@ export const InvestmentPanel = ({ onClose }: InvestmentPanelProps) => {
                 Invest time. Earn eternity.
               </p>
             </div>
-            <button onClick={requestClose} className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-800">
+            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-800">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M4 4l10 10M14 4l-10 10" />
               </svg>
@@ -262,8 +245,7 @@ export const InvestmentPanel = ({ onClose }: InvestmentPanelProps) => {
             </p>
           </div>
         </div>
-      </div>
-    </>
+    </AnimatedPanel>
   )
 }
 
@@ -273,7 +255,6 @@ const TimeBondsSection = () => {
   const timeBonds = useStore((s) => s.timeBonds)
   const createBond = useStore((s) => s.createBond)
   const claimBond = useStore((s) => s.claimBond)
-  const getPendingBondReturns = useStore((s) => s.getPendingBondReturns)
   const sounds = useSoundEngine()
   const [bondAmount, setBondAmount] = useState(10)
   const [bondDuration, setBondDuration] = useState<'short' | 'medium' | 'long'>('short')
@@ -363,7 +344,6 @@ const TimeBondsSection = () => {
             const elapsed = Date.now() - bond.createdAt
             const progress = Math.min(1, elapsed / bond.duration)
             const matured = elapsed >= bond.duration
-            const pendingReturns = getPendingBondReturns(i)
 
             return (
               <div key={bond.id} className={`flex items-center gap-2 bg-gray-800/20 rounded px-3 py-2 border ${bond.claimed ? 'border-green-900/30' : 'border-gray-700/30'}`}>

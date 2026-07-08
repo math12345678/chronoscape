@@ -1,7 +1,7 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useShakeStore } from '../hooks/useScreenShake'
+import { triggerShake } from '../hooks/useScreenShake'
 
 const PARTICLE_COUNT = 30
 const BURST_DURATION = 0.8
@@ -26,9 +26,9 @@ interface HarvestBurstProps {
 export const HarvestBurst = ({ position, onComplete }: HarvestBurstProps) => {
   const meshRef = useRef<THREE.Points>(null)
 
-  // Subtle screen shake on harvest
+  // Subtle screen shake on harvest — makes it feel tactile
   useEffect(() => {
-    useShakeStore.getState().triggerShake(0.15, 6)
+    triggerShake(0.12, 7)
   }, [])
 
   const { particles, geometry } = useMemo(() => {

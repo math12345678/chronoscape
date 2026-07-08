@@ -35,7 +35,7 @@ function playTone(
   endFreq: number,
   duration: number,
   type: OscillatorType = 'sine',
-  volume: number = 0.15,
+  volume: number = 0.22,
   delay: number = 0,
 ) {
   const ctx = getContext()
@@ -59,7 +59,7 @@ function playTone(
   osc.stop(ctx.currentTime + delay + duration + 0.05)
 }
 
-function playNoise(duration: number, lowpassFreq: number, volume: number = 0.2) {
+function playNoise(duration: number, lowpassFreq: number, volume: number = 0.3) {
   const ctx = getContext()
   if (!ctx) return
 
@@ -90,11 +90,11 @@ function playNoise(duration: number, lowpassFreq: number, volume: number = 0.2) 
   source.start()
 }
 
-function playClick(volume: number = 0.05) {
+function playClick(volume: number = 0.08) {
   playTone(800, 1200, 0.03, 'sine', volume)
 }
 
-function playDing(freq: number = 880, volume: number = 0.1) {
+function playDing(freq: number = 880, volume: number = 0.15) {
   playTone(freq, freq * 1.5, 0.15, 'sine', volume)
   playTone(freq * 1.25, freq * 1.8, 0.1, 'sine', volume * 0.5, 0.05)
 }
@@ -114,13 +114,16 @@ export interface SoundEngine {
   formulaDiscovered: () => void
   calibrateHit: () => void
   calibrateMiss: () => void
-  footstep: () => void
+  footstep: (pitch?: number, _?: undefined, volume?: number) => void
   ambientWind: () => void
   waterSplash: () => void
   npcChatter: () => void
   buttonClick: () => void
   menuOpen: () => void
   menuClose: () => void
+  birdsong: () => void
+  crickets: () => void
+  windGust: () => void
 }
 
 /**
@@ -131,8 +134,11 @@ export function useSoundEngine(): SoundEngine {
   return useMemo(() => ({
     /** Bright ascending chime for rift harvesting */
     harvest: () => {
-      playTone(600, 1400, 0.25, 'sine', 0.12)
-      playTone(800, 1600, 0.15, 'sine', 0.06, 0.05)
+      playTone(100, 300, 0.1, 'sine', 0.12)  // Bass thump
+      playTone(500, 1400, 0.3, 'triangle', 0.18)
+      playTone(700, 1800, 0.22, 'sine', 0.1, 0.04)
+      playTone(1100, 2600, 0.15, 'sine', 0.06, 0.08)  // Sparkle
+      playTone(2000, 3000, 0.08, 'sine', 0.03, 0.12)  // High shimmer
     },
 
     /** Low boom + crackle for explosions */
@@ -189,16 +195,19 @@ export function useSoundEngine(): SoundEngine {
       playTone(1000, 2000, 0.08, 'sine', 0.04, 0.16)
     },
 
-    /** Satisfying thud for block placement (low thump + click) */
+    /** Satisfying thud for block placement (deep thump + click + resonance) */
     placeBlock: () => {
-      playTone(120, 80, 0.15, 'sine', 0.15)
-      playTone(400, 600, 0.04, 'triangle', 0.05)
+      playTone(80, 40, 0.25, 'sine', 0.22)
+      playTone(150, 100, 0.15, 'triangle', 0.1)
+      playTone(350, 550, 0.08, 'triangle', 0.07)
+      playTone(700, 1000, 0.05, 'sine', 0.04, 0.04)  // Ring
     },
 
-    /** Sharp reverse-thud + crack for manual block removal */
+    /** Sharp crack + scatter for blocking removal */
     removeBlock: () => {
-      playTone(300, 500, 0.05, 'triangle', 0.06)
-      playNoise(0.08, 500, 0.08)
+      playTone(200, 400, 0.03, 'triangle', 0.08)
+      playNoise(0.08, 800, 0.1)
+      playTone(500, 200, 0.06, 'sine', 0.04)
     },
 
     /** Soft puff sound for block decay */
@@ -227,10 +236,12 @@ export function useSoundEngine(): SoundEngine {
       playNoise(0.1, 300, 0.04)
     },
 
-    /** Soft footstep on grass */
-    footstep: () => {
-      playNoise(0.06, 200, 0.015)
-      playTone(80, 60, 0.04, 'sine', 0.02)
+    /** Soft footstep with velocity-based intensity */
+    footstep: (pitch = 1, _?: undefined, volume?: number) => {
+      const v = volume ?? 0.035
+      const p = 80 * pitch
+      playNoise(0.08, 300 * pitch, v * 0.85)
+      playTone(p, p * 0.6, 0.05, 'sine', v)
     },
 
     /** Distant wind howl */
@@ -264,6 +275,33 @@ export function useSoundEngine(): SoundEngine {
     /** Panel close */
     menuClose: () => {
       playTone(600, 300, 0.1, 'sine', 0.03)
+    },
+
+    /** Birdsong — melodic chirps at random intervals */
+    birdsong: () => {
+      const notes = [1200, 1400, 1600, 1800, 1500, 1300]
+      const note = notes[Math.floor(Math.random() * notes.length)]
+      playTone(note, note * 1.1, 0.06, 'sine', 0.03)
+      setTimeout(() => {
+        playTone(note * 1.25, note * 1.3, 0.04, 'sine', 0.02)
+      }, 80)
+    },
+
+    /** Crickets at night — rapid chirps */
+    crickets: () => {
+      playTone(4000, 4200, 0.02, 'triangle', 0.01)
+      setTimeout(() => {
+        playTone(3800, 4000, 0.015, 'triangle', 0.008)
+      }, 50)
+      setTimeout(() => {
+        playTone(4200, 4400, 0.02, 'triangle', 0.006)
+      }, 120)
+    },
+
+    /** Wind gust — stronger than ambient wind, with a whoosh */
+    windGust: () => {
+      playNoise(0.8, 600, 0.04)
+      playTone(80, 120, 0.6, 'sine', 0.015)
     },
   }), [])
 }

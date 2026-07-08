@@ -1,13 +1,41 @@
 import { useRef, useMemo, useState, useCallback, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import type { ExtendedNPC, NPCState } from '../../npcAI'
+import type { ExtendedNPC, NPCState, NPCBodyType } from '../../npcAI'
+import { giftLiquidToNPC, giftCrystalToNPC } from '../../npcAI'
 import { useStore } from '../../store'
+import { getNPCs } from './NPCTick'
+import { getDayFactor } from '../DayNightCycle'
 import { HealBurst } from './HealBurst'
+import { NPCGiftBurst } from './NPCGiftBurst'
 import { forceNPCRender } from './NPCSpawner'
 import { useSoundEngine } from '../../hooks/useSoundEngine'
 import { unlockHealAchievement } from '../UI/ToastNotifications'
-import { SpeechBubble, NPC_SPEECHES } from '../SpeechBubble'
+import { SpeechBubble, NPC_SPEECHES, NIGHT_SPEECHES } from '../SpeechBubble'
+
+/**
+ * Generates a canvas texture with the NPC's name rendered as a subtle label.
+ */
+function useNameTag(name: string, color: string) {
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 128
+    canvas.height = 24
+    const ctx = canvas.getContext('2d')!
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'
+    ctx.shadowBlur = 4
+    ctx.font = 'bold 12px "Courier New", monospace'
+    ctx.fillStyle = color
+    ctx.fillText(name, canvas.width / 2, canvas.height / 2)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.needsUpdate = true
+    return tex
+  }, [name, color])
+  return texture
+}
 
 interface NPCCharacterProps {
   npc: ExtendedNPC
@@ -18,9 +46,14 @@ const STATE_COLORS: Record<NPCState, string> = {
   wander: '#44aaff',
   seek_rift: '#ffaa44',
   harvest: '#44ff88',
-  return: '#ff8844',
-  rest: '#aa88ff',
-  tour: '#44ffcc',
+  return: '#888844',
+  rest: '#666688',
+  tour: '#aa88ff',
+  interacting: '#ff88aa',
+  follow: '#44ddff',
+  seek_shelter: '#88aacc',
+  seek_build: '#ff8844',
+  build: '#ffcc44',
 }
 
 /** Compute heal cost: 1 Liquid per 20 missing vitality, minimum 1 */
@@ -28,51 +61,56 @@ function getHealCost(vitality: number): number {
   return Math.max(1, Math.ceil((100 - vitality) / 20))
 }
 
-// ── Rewind buffer types ─────────────────────────────────
-
 interface PositionSnapshot {
   pos: [number, number, number]
   rotY: number
 }
 
-const REWIND_BUFFER_SIZE = 120  // ~2 seconds at 60fps
+const REWIND_BUFFER_SIZE = 120
 
 /**
- * An animated 3D NPC character with:
- * - Colored robe/body (based on NPC's color property)
- * - Head with hat
- * - Arms that swing while walking
- * - Legs that alternate while walking
- * - Gentle idle breathing bob
- * - State indicator ring below feet
- * - Vitality bar above head
- * - Interactive: click to heal
- * - Health-state body color (drains toward grey when low)
- * - Rewind heal animation: records last 2s of position and plays it backward
+ * Animated 3D NPC with Phase 3 features:
+ * - 3 body types (thin/stocky/average)
+ * - Accessories (backpack/scarf/hat_variant/staff)
+ * - Click to follow (empty hands, no block selected)
+ * - Gifting resources (liquid → vitality, crystal → color change)
+ * - Night-time chattiness
  */
 export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
   const [showHealBurst, setShowHealBurst] = useState(false)
+  const [showGiftBurst, setShowGiftBurst] = useState(false)
   const [rewinding, setRewinding] = useState(false)
   const groupRef = useRef<THREE.Group>(null)
   const armLeftRef = useRef<THREE.Group>(null)
   const armRightRef = useRef<THREE.Group>(null)
   const legLeftRef = useRef<THREE.Group>(null)
   const legRightRef = useRef<THREE.Group>(null)
+  const staffRef = useRef<THREE.Mesh>(null)
+  const bodyRef = useRef<THREE.Mesh>(null)
+  const headRef = useRef<THREE.Mesh>(null)
   const bobPhase = useRef(Math.random() * Math.PI * 2)
   const prevPos = useRef(npc.position)
+  const isNightRef = useRef(false)
+  const [isNight, setIsNight] = useState(false)
 
-  // Rewind history buffer
+  // Rewind buffer
   const rewindBuffer = useRef<PositionSnapshot[]>([])
   const rewindIndex = useRef(0)
   const rewindTimer = useRef(0)
 
+  // ── Idle animation state ──
+  const idlePhase = useRef(Math.random() * Math.PI * 2)
+  const idleLookTarget = useRef(0)
+  const idleLookTimer = useRef(0)
+
   const sounds = useSoundEngine()
-  const bodyColor = npc.color
+
+  // Compute display color (gift override or default)
+  const bodyColor = npc.giftColor ?? npc.color
   const vitality = npc.vitality
-  const needHeal = vitality < 100
+  const needHeal = vitality < 100 && !npc.following
   const healCost = getHealCost(vitality)
 
-  // Compute health-scaled body color (desaturate when low)
   const healthColor = useMemo(() => {
     const c = new THREE.Color(bodyColor)
     const healthFactor = vitality / 100
@@ -95,22 +133,26 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
 
   const s = npc.scale
 
-  // Speech bubble state
+  // ── Speech bubble ──
   const [speech, setSpeech] = useState<string | null>(null)
   const speechTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Random speech every 4-8 seconds
   useEffect(() => {
     const speak = () => {
-      const speeches = NPC_SPEECHES[npc.state] ?? NPC_SPEECHES.idle
+      // Use night speeches at night
+      const speeches = isNight && NIGHT_SPEECHES[npc.state]
+        ? NIGHT_SPEECHES[npc.state]
+        : (npc.interactingWith
+          ? NPC_SPEECHES.interacting
+          : (NPC_SPEECHES[npc.state] ?? NPC_SPEECHES.idle))
       const msg = speeches[Math.floor(Math.random() * speeches.length)]
       setSpeech(msg)
       if (speechTimer.current) clearTimeout(speechTimer.current)
       speechTimer.current = setTimeout(() => setSpeech(null), 2500)
     }
 
-    const interval = setInterval(speak, 4000 + Math.random() * 4000)
-    // First speech sooner
+    // Night: more frequent speech
+    const interval = setInterval(speak, isNight ? 2000 + Math.random() * 3000 : 4000 + Math.random() * 4000)
     const first = setTimeout(speak, 1000 + Math.random() * 2000)
 
     return () => {
@@ -118,49 +160,104 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
       clearTimeout(first)
       if (speechTimer.current) clearTimeout(speechTimer.current)
     }
-  }, [npc.state])
+  }, [npc.state, npc.interactingWith, isNight])
 
-  // Interactable data for raycasting
-  const userData = useMemo(
-    () => ({
+  // ── Name tag texture ──
+  const nameTagTexture = useNameTag(npc.name, `#${healthColor.getHexString()}`)
+
+  // ── Interactable data ──
+  const userData = useMemo(() => {
+    const data: any = {
       interactable: true,
-      type: 'npc' as const,
+      type: 'npc',
       npcId: npc.id,
       vitality: npc.vitality,
       healCost,
-      prompt: needHeal
-        ? `[Click] Reverse Timeline — ${healCost} Liquid`
-        : `${npc.name} — Healthy`,
-    }),
-    [npc.id, npc.name, needHeal, healCost, npc.vitality],
-  )
+    }
 
+    if (needHeal) {
+      data.prompt = `[Click] Heal ${npc.name} — ${healCost} Liquid`
+    } else if (npc.following) {
+      data.prompt = `[Click] Dismiss ${npc.name}`
+    } else {
+      data.prompt = `[Click] ${npc.name}`
+    }
+    data.isFollower = npc.following || false
+    data.canGiftLiquid = npc.following
+    data.canGiftCrystal = npc.following
+
+    return data
+  }, [npc.id, npc.name, needHeal, healCost, npc.vitality, npc.following])
+
+  // ── Click handler ──
   const handleClick = useCallback(() => {
     if (useStore.getState().selectedBlockType) return
-    if (!needHeal || rewinding) return
 
     const state = useStore.getState()
-    if (state.inventory.liquid < healCost) return
+    const allNPCs = getNPCs()
+    const idx = allNPCs.findIndex((n) => n.id === npc.id)
+    if (idx < 0) return
 
-    useStore.setState((s) => ({
-      inventory: {
-        ...s.inventory,
-        liquid: s.inventory.liquid - healCost,
-      },
-    }))
+    // If already following → dismiss
+    if (npc.following) {
+      allNPCs[idx] = { ...allNPCs[idx], following: false, followingSince: null, state: 'idle', stateTimer: 1 }
+      return
+    }
 
-    // Start rewind animation
-    setRewinding(true)
-    rewindIndex.current = rewindBuffer.current.length - 1
-    rewindTimer.current = 0
-    sounds.heal()
+    // Check if need heal
+    if (needHeal && state.inventory.liquid >= healCost) {
+      useStore.setState((s) => ({
+        inventory: { ...s.inventory, liquid: s.inventory.liquid - healCost },
+      }))
+      setRewinding(true)
+      rewindIndex.current = rewindBuffer.current.length - 1
+      rewindTimer.current = 0
+      sounds.heal()
+      allNPCs[idx] = { ...allNPCs[idx], vitality: 100 }
+      if (forceNPCRender) forceNPCRender()
+      return
+    }
 
-    // Restore vitality immediately
-    npc.vitality = 100
+      // Check max followers via module-level NPC array
+    const followerCount = allNPCs.filter((n) => n.following).length
+
+    if (followerCount >= 2) {
+      setSpeech('Too many followers...')
+      return
+    }
+
+    // Start following
+    allNPCs[idx] = { ...allNPCs[idx], following: true, followingSince: Date.now(), state: 'follow' }
     if (forceNPCRender) forceNPCRender()
-  }, [needHeal, healCost, npc, sounds, rewinding])
+
+  }, [needHeal, healCost, npc.id, npc.following, sounds])
+
+  // ── Right-click gift handler ──
+  const _handleGift = useCallback((type: 'liquid' | 'crystal') => {
+    if (type === 'liquid') {
+      const success = giftLiquidToNPC(npc, 10)
+      if (success) {
+        setShowGiftBurst(true)
+        setSpeech('Thank you! 💚')
+        sounds.purchase()
+      }
+    } else {
+      const success = giftCrystalToNPC(npc, 5)
+      if (success) {
+        setShowGiftBurst(true)
+        setSpeech('Beautiful! ✨')
+        sounds.purchase()
+      }
+    }
+  }, [npc, sounds])
 
   useFrame((_, delta) => {
+    const currentIsNight = getDayFactor() < 0.3
+    if (currentIsNight !== isNightRef.current) {
+      isNightRef.current = currentIsNight
+      setIsNight(currentIsNight)
+    }
+
     if (!groupRef.current) return
     bobPhase.current += delta * 4
 
@@ -170,17 +267,14 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
     prevPos.current = npc.position
 
     if (rewinding) {
-      // ── Rewind animation: play back the position buffer ──
       rewindTimer.current += delta * 60
       const step = Math.floor(rewindTimer.current)
       const idx = Math.max(0, rewindIndex.current - step)
 
       if (step >= rewindIndex.current || idx <= 0) {
-        // Rewind complete
         setRewinding(false)
         setShowHealBurst(true)
         unlockHealAchievement()
-        // Final position = current NPC position (already restored)
         groupRef.current.position.set(npc.position[0], npc.position[1], npc.position[2])
         return
       }
@@ -191,20 +285,16 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
         groupRef.current.rotation.y = snap.rotY
       }
 
-      // Add rewind glow to state ring
       const ring = groupRef.current.children[0] as THREE.Mesh | undefined
       if (ring) {
         const mat = ring.material as THREE.MeshBasicMaterial
         mat.color.setHex(0x44ffcc)
         mat.opacity = 0.6 + Math.sin(rewindTimer.current * 0.5) * 0.3
       }
-
       return
     }
 
-    // ── Normal animation ──
-
-    // Record position snapshot for rewind buffer
+    // Record position snapshot for rewind
     rewindBuffer.current.push({
       pos: [npc.position[0], npc.position[1], npc.position[2]],
       rotY: groupRef.current.rotation.y,
@@ -215,25 +305,89 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
 
     groupRef.current.position.set(npc.position[0], npc.position[1], npc.position[2])
 
+    const isIdle = !moving && (npc.state === 'idle' || npc.state === 'rest' || npc.state === 'interacting')
+
+    // ── Idle animations: breathing, head-turning, arm sway ──
+    idlePhase.current += delta * (isIdle ? 1.5 : 3.0)
+
+    // Breathing: subtle body scale oscillation on Y axis
+    if (bodyRef.current) {
+      const breathe = isIdle ? 0.015 : moving ? 0 : 0.008
+      const breathCycle = Math.sin(bobPhase.current * 0.5 + idlePhase.current * 0.3) * breathe * s
+      bodyRef.current.scale.y = 1 + breathCycle
+      // Slight width expansion when breathing in
+      bodyRef.current.scale.x = 1 - breathCycle * 0.3
+    }
+
+    // Head-turning: periodically look around when idle (~every 3-7 seconds)
+    if (headRef.current) {
+      idleLookTimer.current += delta
+      if (idleLookTimer.current > 3 + Math.random() * 4) {
+        idleLookTarget.current = (Math.random() - 0.5) * 0.5
+        idleLookTimer.current = 0
+      }
+      // Smoothly look toward target when idle, snap to center when moving
+      const targetRot = isIdle ? idleLookTarget.current : 0
+      headRef.current.rotation.y = THREE.MathUtils.lerp(
+        headRef.current.rotation.y,
+        targetRot,
+        delta * 2.5
+      )
+
+      // Subtle head tilt when idle
+      headRef.current.rotation.z = isIdle ? Math.sin(idlePhase.current * 0.4) * 0.02 : 0
+    }
+
+    // Subtle arm drift when idle (arms gently sway instead of being frozen)
+    if (armLeftRef.current && armRightRef.current && !moving) {
+      const drift = Math.sin(idlePhase.current * 0.5) * 0.06
+      armLeftRef.current.rotation.x = drift
+      armRightRef.current.rotation.x = -drift
+      // Slight arm rotation on Z axis for natural hang
+      armLeftRef.current.rotation.z = Math.sin(idlePhase.current * 0.3 + 1) * 0.03
+      armRightRef.current.rotation.z = Math.cos(idlePhase.current * 0.3 + 2) * 0.03
+    }
+
     if (moving) {
       const angle = Math.atan2(dx, dz)
       groupRef.current.rotation.y = angle
+
+      // Walk swing overrides idle drift
+      if (armLeftRef.current && armRightRef.current) {
+        const swing = Math.sin(bobPhase.current * 2) * 0.4
+        armLeftRef.current.rotation.x = swing
+        armRightRef.current.rotation.x = -swing
+        // Clear idle Z drift
+        armLeftRef.current.rotation.z = 0
+        armRightRef.current.rotation.z = 0
+      }
+
+      if (legLeftRef.current && legRightRef.current) {
+        const swing = Math.sin(bobPhase.current * 2 + Math.PI) * 0.3
+        legLeftRef.current.rotation.x = swing
+        legRightRef.current.rotation.x = -swing
+      }
+    } else {
+      // Reset legs to neutral when stopped
+      if (legLeftRef.current && legRightRef.current) {
+        legLeftRef.current.rotation.x = 0
+        legRightRef.current.rotation.x = 0
+      }
     }
 
     const bobAmount = moving ? 0 : Math.sin(bobPhase.current) * 0.03 * s
     const walkBob = moving ? Math.abs(Math.sin(bobPhase.current * 2)) * 0.08 * s : 0
     groupRef.current.position.y = npc.position[1] + bobAmount + walkBob
 
-    if (armLeftRef.current && armRightRef.current) {
-      const swing = moving ? Math.sin(bobPhase.current * 2) * 0.4 : 0
-      armLeftRef.current.rotation.x = swing
-      armRightRef.current.rotation.x = -swing
-    }
-
     if (legLeftRef.current && legRightRef.current) {
       const swing = moving ? Math.sin(bobPhase.current * 2 + Math.PI) * 0.3 : 0
       legLeftRef.current.rotation.x = swing
       legRightRef.current.rotation.x = -swing
+    }
+
+    // Staff bob
+    if (staffRef.current && npc.accessory === 'staff') {
+      staffRef.current.rotation.z = Math.sin(bobPhase.current * 0.5) * 0.05
     }
 
     if (!moving) {
@@ -244,13 +398,21 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
   const vitPct = vitality / 100
   const bodyMatColor = rewinding ? rewindTint : healthColor
 
+  // ── Body dimensions per type ──
+  const bodyDims: Record<NPCBodyType, { w: number; h: number; head: number; hatH: number }> = {
+    thin: { w: 0.28, h: 0.55, head: 0.13, hatH: 0.12 },
+    stocky: { w: 0.42, h: 0.45, head: 0.17, hatH: 0.18 },
+    average: { w: 0.35, h: 0.5, head: 0.15, hatH: 0.15 },
+  }
+  const dims = bodyDims[npc.bodyType] ?? bodyDims.average
+
   return (
     <group ref={groupRef}>
       {/* Speech bubble */}
       {speech && (
         <SpeechBubble
           text={speech}
-          color={STATE_COLORS[npc.state]}
+          color={npc.interactingWith ? '#ff88ff' : STATE_COLORS[npc.state]}
           position={[0, 0, 0]}
           bubbleHeight={1.8}
         />
@@ -274,14 +436,12 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
         <meshBasicMaterial color="#000" transparent opacity={0.2} depthWrite={false} />
       </mesh>
 
-      {/* Vitality bar above head */}
+      {/* Vitality bar */}
       <group position={[0, 1.3 * s, 0]}>
-        {/* Background bar */}
         <mesh position={[0, 0, 0]}>
           <planeGeometry args={[0.8 * s, 0.06 * s]} />
           <meshBasicMaterial color="#333" transparent opacity={0.6} depthWrite={false} />
         </mesh>
-        {/* Health fill */}
         <mesh position={[-(0.4 * s) * (1 - vitPct), 0, 0.001]}>
           <planeGeometry args={[0.8 * s * vitPct, 0.06 * s]} />
           <meshBasicMaterial
@@ -293,7 +453,20 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
         </mesh>
       </group>
 
-      {/* Legs */}
+      {/* Name tag — always visible above NPC */}
+      <sprite position={[0, 1.7 * s, 0]} scale={[1.6, 0.35, 1]}>
+        <spriteMaterial map={nameTagTexture} transparent depthWrite={false} opacity={0.85} sizeAttenuation />
+      </sprite>
+
+      {/* Following indicator (small diamond above head) */}
+      {npc.following && (
+        <mesh position={[0, 1.5 * s, 0]}>
+          <coneGeometry args={[0.05 * s, 0.08 * s, 4]} />
+          <meshBasicMaterial color="#44ffcc" transparent opacity={0.7} />
+        </mesh>
+      )}
+
+      {/* ── LEGS ── */}
       <group ref={legLeftRef} position={[-0.12 * s, 0.15 * s, 0]}>
         <mesh position={[0, -0.15 * s, 0]} castShadow>
           <boxGeometry args={[0.08 * s, 0.3 * s, 0.08 * s]} />
@@ -307,46 +480,47 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
         </mesh>
       </group>
 
-      {/* Body / Torso (robe) — interactive for healing */}
+      {/* ── BODY (proportions vary by bodyType) ── */}
       <mesh
+        ref={bodyRef}
         position={[0, 0.55 * s, 0]}
         castShadow
         onClick={rewinding ? undefined : handleClick}
         userData={rewinding ? undefined : userData}
       >
-        <boxGeometry args={[0.35 * s, 0.5 * s, 0.2 * s]} />
+        <boxGeometry args={[dims.w * s, dims.h * s, 0.2 * s]} />
         <meshStandardMaterial color={bodyMatColor} roughness={0.7} />
       </mesh>
 
       {/* Belt accent */}
       <mesh position={[0, 0.35 * s, 0]}>
-        <boxGeometry args={[0.38 * s, 0.04 * s, 0.22 * s]} />
+        <boxGeometry args={[dims.w * s + 0.03, 0.04 * s, 0.22 * s]} />
         <meshStandardMaterial color={rewinding ? '#44ffcc' : '#c8a060'} roughness={0.5} metalness={0.3} />
       </mesh>
 
-      {/* Arms */}
-      <group ref={armLeftRef} position={[-0.25 * s, 0.55 * s, 0]}>
+      {/* ── ARMS ── */}
+      <group ref={armLeftRef} position={[-dims.w * 0.7 * s, 0.55 * s, 0]}>
         <mesh position={[0, -0.2 * s, 0]} castShadow>
           <boxGeometry args={[0.07 * s, 0.4 * s, 0.07 * s]} />
           <meshStandardMaterial color={rewinding ? rewindTint : darkBody} roughness={0.8} />
         </mesh>
       </group>
-      <group ref={armRightRef} position={[0.25 * s, 0.55 * s, 0]}>
+      <group ref={armRightRef} position={[dims.w * 0.7 * s, 0.55 * s, 0]}>
         <mesh position={[0, -0.2 * s, 0]} castShadow>
           <boxGeometry args={[0.07 * s, 0.4 * s, 0.07 * s]} />
           <meshStandardMaterial color={rewinding ? rewindTint : darkBody} roughness={0.8} />
         </mesh>
       </group>
 
-      {/* Head */}
-      <mesh position={[0, 0.85 * s, 0]} castShadow>
-        <sphereGeometry args={[0.15 * s, 10, 10]} />
+      {/* ── HEAD ── */}
+      <mesh ref={headRef} position={[0, 0.85 * s, 0]} castShadow>
+        <sphereGeometry args={[dims.head * s, 10, 10]} />
         <meshStandardMaterial color={rewinding ? rewindTint : '#d4a574'} roughness={0.6} />
       </mesh>
 
-      {/* Hat / Hair */}
+      {/* Hat / Hair (varies by body type) */}
       <mesh position={[0, 0.95 * s, -0.02 * s]} castShadow>
-        <coneGeometry args={[0.18 * s, 0.15 * s, 8]} />
+        <coneGeometry args={[dims.hatH * 1.2 * s, dims.hatH * s, 8]} />
         <meshStandardMaterial color={rewinding ? rewindTint : darkBody} roughness={0.8} />
       </mesh>
 
@@ -360,15 +534,110 @@ export const NPCCharacter = ({ npc }: NPCCharacterProps) => {
         <meshBasicMaterial color="#222" />
       </mesh>
 
-      {/* Heal burst effect (plays after rewind completes) */}
-      {showHealBurst && (
-        <HealBurst
-          position={[0, 0.8 * s, 0]}
-          onComplete={() => setShowHealBurst(false)}
-        />
+      {/* ── ACCESSORIES ── */}
+
+      {/* Backpack */}
+      {npc.accessory === 'backpack' && (
+        <group position={[0, 0.5 * s, -0.15 * s]}>
+          <mesh>
+            <boxGeometry args={[0.2 * s, 0.25 * s, 0.08 * s]} />
+            <meshStandardMaterial color={darkBody} roughness={0.9} />
+          </mesh>
+          {/* Strap */}
+          <mesh position={[0.1 * s, 0, 0.06 * s]}>
+            <boxGeometry args={[0.02 * s, 0.3 * s, 0.01 * s]} />
+            <meshBasicMaterial color="#664422" />
+          </mesh>
+          <mesh position={[-0.1 * s, 0, 0.06 * s]}>
+            <boxGeometry args={[0.02 * s, 0.3 * s, 0.01 * s]} />
+            <meshBasicMaterial color="#664422" />
+          </mesh>
+        </group>
       )}
 
-      {/* Rewind glow ring (visible during rewind) */}
+      {/* Scarf */}
+      {npc.accessory === 'scarf' && (
+        <group position={[0, 0.72 * s, -0.05 * s]}>
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.3 * s, 0.04 * s, 0.15 * s]} />
+            <meshStandardMaterial
+              color={rewinding ? '#44ffcc' : '#cc6644'}
+              roughness={0.5}
+            />
+          </mesh>
+          {/* Dangling end */}
+          <mesh position={[0.12 * s, -0.1 * s, 0]} rotation={[0, 0, 0.3]}>
+            <boxGeometry args={[0.04 * s, 0.15 * s, 0.02 * s]} />
+            <meshStandardMaterial
+              color={rewinding ? '#44ffcc' : '#cc6644'}
+              roughness={0.5}
+            />
+          </mesh>
+        </group>
+      )}
+
+      {/* Cape — flowing back garment, inspired by wizard-masters cape system */}
+      {npc.accessory === 'cape' && (
+        <group position={[0, 0.55 * s, -0.12 * s]}>
+          {/* Upper cape panel */}
+          <mesh position={[0, 0, 0]} castShadow>
+            <boxGeometry args={[dims.w * s * 0.9, 0.5 * s, 0.02 * s]} />
+            <meshStandardMaterial
+              color={rewinding ? rewindTint : healthColor}
+              roughness={0.8}
+              metalness={0.1}
+              emissive={rewinding ? '#44ffcc' : healthColor}
+              emissiveIntensity={0.1}
+            />
+          </mesh>
+          {/* Lower cape tail */}
+          <mesh position={[0, -0.25 * s, 0.01 * s]}>
+            <boxGeometry args={[dims.w * s * 0.8, 0.25 * s, 0.02 * s]} />
+            <meshStandardMaterial
+              color={rewinding ? rewindTint : darkBody}
+              roughness={0.8}
+            />
+          </mesh>
+          {/* Cape trim */}
+          <mesh position={[0, 0.26 * s, 0]}>
+            <boxGeometry args={[dims.w * s * 0.85, 0.02 * s, 0.03 * s]} />
+            <meshBasicMaterial color="#c8a060" transparent opacity={0.6} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Staff (held in right hand) */}
+      {npc.accessory === 'staff' && (
+        <mesh
+          ref={staffRef}
+          position={[dims.w * 0.7 * s, 0.35 * s, 0]}
+          rotation={[0, 0, 0.15]}
+        >
+          <cylinderGeometry args={[0.02 * s, 0.03 * s, 0.8 * s, 6]} />
+          <meshStandardMaterial color="#8a7a5a" roughness={0.7} />
+          {/* Staff crystal top */}
+          <mesh position={[0, 0.45 * s, 0]}>
+            <sphereGeometry args={[0.04 * s, 6, 6]} />
+            <meshStandardMaterial
+              color={bodyColor}
+              emissive={bodyColor}
+              emissiveIntensity={0.4}
+            />
+          </mesh>
+        </mesh>
+      )}
+
+      {/* Heal burst */}
+      {showHealBurst && (
+        <HealBurst position={[0, 0.8 * s, 0]} onComplete={() => setShowHealBurst(false)} />
+      )}
+
+      {/* Gift burst */}
+      {showGiftBurst && (
+        <NPCGiftBurst position={[0, 0.8 * s, 0]} onComplete={() => setShowGiftBurst(false)} />
+      )}
+
+      {/* Rewind glow */}
       {rewinding && (
         <mesh position={[0, 0.5 * s, 0]}>
           <sphereGeometry args={[0.6 * s, 12, 12]} />

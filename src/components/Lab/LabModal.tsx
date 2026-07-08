@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { useStore } from '../../store'
 import { CalibrationGame } from './CalibrationGame'
-import { useModalClose } from '../../hooks/useModalClose'
+import { NewGamePlusUI } from '../UI/NewGamePlusUI'
+import { AnimatedPanel } from '../UI/AnimatedPanel'
 
 /**
  * Full-screen modal that opens when the player enters the Lab trigger zone.
@@ -12,57 +13,41 @@ export const LabModal = () => {
   const labOpen = useStore((s) => s.labOpen)
   const closeLab = useStore((s) => s.closeLab)
   const formulas = useStore((s) => s.formulas)
-  const allDiscovered = formulas.every((f) => f.discovered)
-  const { closing, requestClose } = useModalClose(closeLab)
-
+  const allDiscovered = formulas.length > 0 && formulas.every((f) => f.discovered)
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && labOpen) {
-        requestClose()
+        closeLab()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [labOpen, requestClose])
-
-  if (!labOpen) return null
+  }, [labOpen, closeLab])
 
   return (
-    <>
-      {/* Backdrop */}
+    <AnimatedPanel open={labOpen} onClose={closeLab} className="z-50" slideFrom="up">
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-150"
-        style={{ opacity: closing ? 0 : 1 }}
-      />
-
-      {/* Panel */}
-      <div className="fixed z-50 inset-0 flex items-center justify-center">
-        <div
-          className="bg-gray-900/95 border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden"
-          style={{
-            width: 440,
-            maxHeight: '90vh',
-            animation: closing ? undefined : 'modal-pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-            transition: 'opacity 0.18s ease, transform 0.18s ease',
-            opacity: closing ? 0 : 1,
-            transform: closing ? 'scale(0.95)' : 'scale(1)',
-          }}
-        >
+        className="bg-gray-900/95 border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden"
+        style={{
+          width: 440,
+          maxHeight: '90vh',
+        }}
+      >
           {/* Header */}
           <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
             <div>
               <h2 className="text-white font-bold text-lg tracking-wide flex items-center gap-2">
-                <span className="text-violet-400">◆</span> The Lab
+                <span className="text-violet-400">◆</span> Chrono Lab
               </h2>
               <p className="text-gray-500 text-xs mt-0.5">
                 {allDiscovered
-                  ? 'All knowledge has been unlocked'
-                  : 'Calibrate the resonator to discover new formulas'}
+                  ? 'All chrono-discoveries complete — the timeline is yours'
+                  : 'Run experiments to discover new chrono-formulas'}
               </p>
             </div>
             <button
-              onClick={requestClose}
+              onClick={closeLab}
               className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-gray-800"
               title="Close (Esc)"
             >
@@ -75,16 +60,16 @@ export const LabModal = () => {
           {/* Body */}
           <div className="px-5 py-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 64px)' }}>
             <CalibrationGame />
+            <NewGamePlusUI />
           </div>
 
           {/* Footer hint */}
           <div className="px-5 py-2.5 border-t border-gray-800">
             <p className="text-gray-600 text-[10px] font-mono text-center">
-              Walk away from the Lab to close · Formulas persist once discovered
+              Walk away to close · Published hypotheses are permanent
             </p>
           </div>
         </div>
-      </div>
-    </>
+    </AnimatedPanel>
   )
 }

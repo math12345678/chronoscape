@@ -1,88 +1,130 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useStore } from '../../store'
+import { lockPointer } from '../../utils/pointerLock'
 
 /**
- * Full-screen overlay shown before the player clicks to lock the pointer.
- * Displays the game title and a "Click to play" prompt with a subtle pulsing animation.
- * Fades out once the pointer is locked.
+ * Clean title screen — just the logo, a subtitle, a click prompt, and controls hint.
+ * No particles, no runes, no orbital rings, no portal effects, no audio synthesis.
  */
 export const ClickToPlay = () => {
-  const [locked, setLocked] = useState(document.pointerLockElement !== null)
+  const hasEnteredGame = useStore((s) => s.hasEnteredGame)
+  const setHasEnteredGame = useStore((s) => s.setHasEnteredGame)
   const [fading, setFading] = useState(false)
+  const [pointerUnlocked, setPointerUnlocked] = useState(false)
+  const resumeFadeRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+  // Track pointer lock changes for resume overlay
   useEffect(() => {
-    const onLockChange = () => {
-      if (document.pointerLockElement) {
-        setFading(true)
-        setTimeout(() => setLocked(true), 400)
-      } else {
-        setLocked(false)
-        setFading(false)
+    const handleLockChange = () => {
+      if (!document.pointerLockElement && hasEnteredGame) {
+        setPointerUnlocked(true)
+        clearTimeout(resumeFadeRef.current)
+        resumeFadeRef.current = setTimeout(() => setPointerUnlocked(false), 15000)
       }
     }
-
-    document.addEventListener('pointerlockchange', onLockChange)
-    document.addEventListener('pointerlockerror', onLockChange)
+    document.addEventListener('pointerlockchange', handleLockChange)
+    document.addEventListener('pointerlockerror', handleLockChange)
     return () => {
-      document.removeEventListener('pointerlockchange', onLockChange)
-      document.removeEventListener('pointerlockerror', onLockChange)
+      document.removeEventListener('pointerlockchange', handleLockChange)
+      document.removeEventListener('pointerlockerror', handleLockChange)
+      clearTimeout(resumeFadeRef.current)
     }
-  }, [])
+  }, [hasEnteredGame])
 
-  if (locked) return null
+  const handleResume = () => {
+    lockPointer()
+    setPointerUnlocked(false)
+  }
+
+  if (hasEnteredGame) {
+    if (pointerUnlocked) {
+      return (
+        <button
+          onClick={handleResume}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] cursor-pointer select-none px-4 py-2 rounded-xl transition-all duration-300 hover:bg-white/5 active:scale-95"
+          style={{
+            background: 'rgba(5,10,25,0.7)',
+            border: '1px solid rgba(68,255,204,0.08)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+        >
+          <span className="text-sm font-mono tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            ⟐ Resume ⟐
+          </span>
+        </button>
+      )
+    }
+    if (!document.pointerLockElement) {
+      return (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center cursor-pointer select-none"
+          style={{ background: 'rgba(0,0,0,0.4)' }}
+          onClick={handleResume}
+        >
+          <div className="text-center pointer-events-none">
+            <p className="text-[#44ffcc] text-lg font-mono tracking-widest animate-pulse">
+              ⟐ Click to enter ⟐
+            </p>
+            <p className="text-[#6a7a90] text-xs font-mono tracking-wider mt-2">
+              WASD to move · Mouse to look · Click to interact
+            </p>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
+  const handleEnter = () => {
+    lockPointer()
+    setFading(true)
+    setTimeout(() => {
+      setHasEnteredGame(true)
+    }, 600)
+  }
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/85 backdrop-blur-md transition-opacity duration-500 ${
-        fading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center cursor-pointer transition-all duration-600 ${
+        fading ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
       }`}
-      style={{ background: 'radial-gradient(ellipse at center, #0a1520 0%, #000000 100%)' }}
+      style={{
+        background: 'radial-gradient(ellipse at 50% 40%, #0f1a2a 0%, #060a12 50%, #000000 100%)',
+      }}
+      onClick={handleEnter}
     >
-      {/* Animated particles in background */}
-      <div className="absolute inset-0 overflow-hidden opacity-30">
-        {Array.from({ length: 30 }, (_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-teal-400/40 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `particle-drift ${8 + Math.random() * 12}s linear infinite`,
-              animationDelay: `${Math.random() * 10}s`,
-              transform: `scale(${0.5 + Math.random()})`,
-            }}
-          />
-        ))}
+      {/* Title */}
+      <div className="relative z-[2] text-center mb-8 pointer-events-none">
+        <h1
+          className="text-7xl font-black tracking-tight mb-2 select-none"
+          style={{
+            background: 'linear-gradient(135deg, #44ffcc 0%, #22ddff 30%, #aa88ff 60%, #ff8844 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 0 20px rgba(68,255,204,0.1))',
+          }}
+        >
+          CHRONOSCAPE
+        </h1>
+
+        <p className="text-sm text-gray-500 font-mono tracking-[0.3em] uppercase">
+          Time as Matter
+        </p>
       </div>
 
-      {/* Decorative ring */}
-      <div className="absolute w-64 h-64 rounded-full border border-teal-500/10 animate-[spin_20s_linear_infinite]" />
-      <div className="absolute w-48 h-48 rounded-full border border-violet-500/10 animate-[spin_15s_linear_infinite_reverse]" />
-
-      {/* Title */}
-      <h1 className="text-7xl font-bold tracking-tight text-white mb-2 select-none relative">
-        <span className="bg-gradient-to-r from-teal-300 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
-          CHRONOSCAPE
-        </span>
-      </h1>
-      <p className="text-sm text-gray-500 font-mono tracking-[0.2em] uppercase mb-16 select-none relative">
-        Time as Matter
-      </p>
-
-      {/* Click prompt with animated glow */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-teal-500/20 blur-xl rounded-full animate-pulse" />
-        <p className="relative text-gray-300 text-lg font-mono tracking-wide select-none cursor-pointer">
+      {/* Click prompt */}
+      <div className="relative z-[2] mb-8 pointer-events-none">
+        <p className="text-gray-300 text-lg font-mono tracking-wide select-none">
           Click to enter the chronoscape
         </p>
       </div>
 
-      {/* Controls hint */}
-      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-center space-y-2">
+      {/* Controls hint — minimal, learned in-game */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center z-[2] pointer-events-none">
         <p className="text-gray-600 text-xs font-mono tracking-wider uppercase select-none">
-          WASD to move · Mouse to look · Click to interact
-        </p>
-        <p className="text-gray-700 text-[10px] font-mono tracking-wider uppercase select-none">
-          R Refine · H Hire · T Trade · 1-2 Blocks · Lab at the glowing structure
+          WASD to move · Click to interact
         </p>
       </div>
     </div>

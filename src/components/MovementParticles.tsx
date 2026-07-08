@@ -3,8 +3,9 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '../store'
 import { getTerrainHeight } from '../terrain'
+import { shouldTick } from '../utils/performance'
 
-const PARTICLE_COUNT = 40
+const PARTICLE_COUNT = 30
 const SPAWN_INTERVAL = 0.1
 const MOVE_THRESHOLD = 0.03 // minimum distance moved to trigger a spawn
 
@@ -38,8 +39,12 @@ export const MovementParticles = () => {
     return { geometry: geo, properties: vel }
   }, [])
 
+  // Hoisted Vector3 for forward direction (avoids per-frame allocation)
+  const forwardVec = useRef(new THREE.Vector3(0, 0, -1))
+
   useFrame((_, delta) => {
     if (!pointsRef.current) return
+    if (!shouldTick(2)) return // throttle
     time.current += delta
     spawnTimer.current += delta
 
@@ -68,8 +73,9 @@ export const MovementParticles = () => {
     prevPos.current.x = px
     prevPos.current.z = pz
 
-    // Estimate movement direction
-    const forward = new THREE.Vector3(0, 0, -1)
+    // Estimate movement direction (no allocation: reuse ref)
+    const forward = forwardVec.current
+    forward.set(0, 0, -1)
     forward.applyQuaternion(camera.quaternion)
     forward.y = 0
     forward.normalize()

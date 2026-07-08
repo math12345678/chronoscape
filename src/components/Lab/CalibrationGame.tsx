@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useMemo } from 'react'
 import { useStore } from '../../store'
 import { CALIBRATION_TARGETS, CALIBRATION_SWEEP_SPEED } from '../../config/constants'
 import type { FormulaId } from '../../store'
@@ -6,20 +6,20 @@ import { useSoundEngine } from '../../hooks/useSoundEngine'
 
 const FORMULA_INFO: Record<FormulaId, { label: string; description: string; gradient: string; color: string }> = {
   crystallization: {
-    label: 'Crystallization',
-    description: 'Permanent building — Crystal blocks never decay',
+    label: 'Aeon Forging',
+    description: 'Permanent building — Aeon blocks never decay',
     gradient: 'from-violet-500 to-purple-600',
     color: '#aa88ff',
   },
   detonation: {
     label: 'Detonation',
-    description: 'Weaponize Vapour — trigger explosive chain reactions',
+    description: 'Weaponize Chrono — trigger explosive chain reactions',
     gradient: 'from-red-500 to-orange-600',
     color: '#ff6644',
   },
   timelineEcho: {
     label: 'Timeline Echo',
-    description: 'Enhanced healing — rewind NPCs more efficiently',
+    description: 'Enhanced healing — rewind time more efficiently',
     gradient: 'from-cyan-500 to-teal-600',
     color: '#44ffcc',
   },
@@ -43,11 +43,19 @@ export const CalibrationGame = () => {
   const lastTime = useRef(performance.now())
   const rafId = useRef<number | null>(null)
   const trailRef = useRef<number[]>([])
+  const comboRef = useRef(0)
+  const maxComboRef = useRef(0)
+  const speedRef = useRef(CALIBRATION_SWEEP_SPEED)
+  const hitStreak = useRef(0)
 
   // Select first undiscovered formula
-  const activeFormula = formulas.find((f) => !f.discovered) ?? formulas[0]
-  const target = CALIBRATION_TARGETS[activeFormula.id as keyof typeof CALIBRATION_TARGETS] ?? { start: 25, end: 55 }
-  const info = FORMULA_INFO[activeFormula.id as FormulaId]
+  const activeFormula = formulas.find((f) => !f.discovered) ?? formulas[0] ?? null
+  const formulaId = activeFormula?.id
+  const target = useMemo(
+    () => formulaId ? (CALIBRATION_TARGETS[formulaId as keyof typeof CALIBRATION_TARGETS] ?? { start: 25, end: 55 }) : { start: 25, end: 55 },
+    [formulaId],
+  )
+  const info = formulaId ? FORMULA_INFO[formulaId as FormulaId] : null
   const isInZone = needlePos.current >= target.start && needlePos.current <= target.end
 
   // Needle animation — driven by rAF
@@ -56,7 +64,11 @@ export const CalibrationGame = () => {
     const dt = Math.min((now - lastTime.current) / 1000, 0.1)
     lastTime.current = now
 
-    needlePos.current += CALIBRATION_SWEEP_SPEED * dt * needleDir.current
+    // Speed ramps with combo
+    const speedMult = 1 + comboRef.current * 0.12
+    const currentSpeed = CALIBRATION_SWEEP_SPEED * speedMult
+
+    needlePos.current += currentSpeed * dt * needleDir.current
 
     if (needlePos.current >= 100) {
       needlePos.current = 100
@@ -87,6 +99,13 @@ export const CalibrationGame = () => {
       zone.style.opacity = inZone ? '0.6' : '0.15'
     }
 
+    // Update info with dynamic speed
+    const info = document.getElementById('calibration-info')
+    if (info) {
+      const speedMult = 1 + comboRef.current * 0.12
+      info.textContent = `Speed: ${Math.round(CALIBRATION_SWEEP_SPEED * speedMult)} u/s · Zone: ${target.start}–${target.end} · Combo bonus: +${Math.floor(comboRef.current / 3)}`
+    }
+
     rafId.current = requestAnimationFrame(tick)
   }, [target])
 
@@ -108,7 +127,17 @@ export const CalibrationGame = () => {
     const pos = needlePos.current
     const isHit = pos >= target.start && pos <= target.end
     if (isHit) {
-      addHitToFormula(activeFormula.id)
+      // Combo: consecutive hits give bonus progress
+      comboRef.current++
+      hitStreak.current++
+      if (comboRef.current > maxComboRef.current) maxComboRef.current = comboRef.current
+
+      // Each combo level gives one extra hit per trigger
+      const hitsToAdd = 1 + Math.floor(comboRef.current / 3)
+      for (let i = 0; i < hitsToAdd; i++) {
+        addHitToFormula(activeFormula.id)
+      }
+
       sounds.calibrateHit()
 
       const flash = document.getElementById('calibration-flash')
@@ -117,20 +146,37 @@ export const CalibrationGame = () => {
         setTimeout(() => { flash.style.opacity = '0' }, 250)
       }
 
+      // Combo display update
+      const comboEl = document.getElementById('calibration-combo')
+      if (comboEl && comboRef.current >= 2) {
+        comboEl.textContent = `${comboRef.current}x COMBO`
+        comboEl.style.opacity = '1'
+        comboEl.style.transform = 'scale(1.3)'
+        setTimeout(() => { comboEl.style.transform = 'scale(1)' }, 200)
+      }
+
       // Hit particle burst
       const dial = document.getElementById('calibration-dial')
       if (dial) {
-        dial.style.boxShadow = '0 0 20px rgba(68,255,136,0.3)'
+        const glowIntensity = Math.min(0.6, 0.15 + comboRef.current * 0.05)
+        dial.style.boxShadow = `0 0 ${20 + comboRef.current * 5}px ${infoColor}${Math.floor(glowIntensity * 255).toString(16).padStart(2, '0')}`
         setTimeout(() => { dial.style.boxShadow = 'none' }, 400)
       }
     } else {
+      comboRef.current = 0
       sounds.calibrateMiss()
 
       const dial = document.getElementById('calibration-dial')
       if (dial) {
         dial.style.animation = 'none'
-        dial.offsetHeight
+        void dial.offsetHeight
         dial.style.animation = 'shake 0.25s ease'
+      }
+
+      // Hide combo display on miss
+      const comboEl = document.getElementById('calibration-combo')
+      if (comboEl) {
+        comboEl.style.opacity = '0'
       }
     }
   }, [activeFormula, target, addHitToFormula, sounds])
@@ -304,12 +350,19 @@ export const CalibrationGame = () => {
                 when in the zone
               </p>
             </div>
-            <button
-              onClick={handleCalibrate}
-              className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold uppercase tracking-wider rounded-md hover:brightness-110 active:scale-95 transition-all"
-            >
-              Calibrate
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Combo display */}
+              <span id="calibration-combo" className="text-transparent text-xs font-bold font-mono transition-all duration-200"
+                style={{ opacity: 0, color: infoColor, textShadow: `0 0 10px ${infoColor}44` }}>
+                0x COMBO
+              </span>
+              <button
+                onClick={handleCalibrate}
+                className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-bold uppercase tracking-wider rounded-md hover:brightness-110 active:scale-95 transition-all"
+              >
+                Calibrate
+              </button>
+            </div>
           </div>
 
           {/* Flash overlay */}
@@ -320,8 +373,8 @@ export const CalibrationGame = () => {
           />
 
           {/* Info */}
-          <p className="text-gray-600 text-[10px] text-center mt-2 font-mono">
-            Speed: {CALIBRATION_SWEEP_SPEED} u/s · Zone: {target.start}–{target.end} · Hits: {activeFormula.hitsLanded}/{activeFormula.hitsRequired}
+          <p className="text-gray-600 text-[10px] text-center mt-2 font-mono" id="calibration-info">
+            Speed: 45 u/s · Zone: {target.start}–{target.end} · Hits: {activeFormula.hitsLanded}/{activeFormula.hitsRequired}
           </p>
         </div>
       )}

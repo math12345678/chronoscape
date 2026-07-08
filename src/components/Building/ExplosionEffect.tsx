@@ -1,7 +1,8 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useShakeStore } from '../../hooks/useScreenShake'
+import { triggerShake } from '../../hooks/useScreenShake'
+import { spawnShockwave } from '../ShockwaveRing'
 import { useSoundEngine } from '../../hooks/useSoundEngine'
 
 interface ExplosionEffectProps {
@@ -9,31 +10,45 @@ interface ExplosionEffectProps {
   onComplete: () => void
 }
 
-const PARTICLE_COUNT = 60
-const DURATION = 0.8
+const PARTICLE_COUNT = 100
+const DURATION = 1.2
 
 /**
  * Visual explosion effect that spawns when a detonation occurs.
  * Consists of:
  * - Expanding ring (shockwave)
+ * - Ground ripple shockwave (Phase 4.4)
  * - Burst of colored particles
  * - Flash (via opacity)
  */
 export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) => {
   const groupRef = useRef<THREE.Group>(null)
   const pointsRef = useRef<THREE.Points>(null)
+  const rippleRef = useRef<THREE.Mesh>(null)
   const elapsed = useRef(0)
   const done = useRef(false)
   const sounds = useSoundEngine()
 
-  // Trigger screen shake and sound on explosion
+  // Trigger screen shake and sound on explosion — same frame as visual
   useEffect(() => {
-    useShakeStore.getState().triggerShake(0.5, 3)
+    triggerShake(0.8, 5)
+    spawnShockwave({ position: [position[0], position[1] - 0.5, position[2]], color: '#ff6644', duration: 0.8, maxScale: 8, ringCount: 3 })
     sounds.explosion()
+    // Brief flash overlay in DOM
+    const flash = document.getElementById('explosion-flash') || (() => {
+      const el = document.createElement('div')
+      el.id = 'explosion-flash'
+      el.style.cssText = 'position:fixed;inset:0;background:white;pointer-events:none;z-index:9999;opacity:0;transition:opacity 0.05s ease-out'
+      document.body.appendChild(el)
+      return el
+    })()
+    flash.style.opacity = '0.6'
+    requestAnimationFrame(() => { flash.style.opacity = '0' })
+    setTimeout(() => { if (flash.parentNode) flash.parentNode.removeChild(flash) }, 200)
   }, [sounds])
 
   // Per-instance geometry and particles
-  const { particles, geometry, colors } = useMemo(() => {
+  const { particles, geometry } = useMemo(() => {
     const posArray = new Float32Array(PARTICLE_COUNT * 3)
     const opArray = new Float32Array(PARTICLE_COUNT).fill(1)
     const colArray = new Float32Array(PARTICLE_COUNT * 3)
@@ -44,17 +59,20 @@ export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) 
 
     const parts: { velocity: THREE.Vector3; maxLife: number }[] = []
     const colorPalette = [
-      new THREE.Color('#444444'),
-      new THREE.Color('#666666'),
-      new THREE.Color('#888888'),
-      new THREE.Color('#aaaaaa'),
-      new THREE.Color('#333333'),
+      new THREE.Color('#ff6633'),
+      new THREE.Color('#ff8844'),
+      new THREE.Color('#ffaa44'),
+      new THREE.Color('#ff4433'),
+      new THREE.Color('#ffcc66'),
+      new THREE.Color('#ffffff'),
+      new THREE.Color('#ff2200'),
+      new THREE.Color('#ffaa22'),
     ]
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const theta = Math.random() * Math.PI * 2
       const phi = Math.random() * Math.PI
-      const speed = 4 + Math.random() * 10
+      const speed = 6 + Math.random() * 14
       parts.push({
         velocity: new THREE.Vector3(
           Math.sin(phi) * Math.cos(theta) * speed,
@@ -69,7 +87,7 @@ export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) 
       colArray[i * 3 + 1] = c.g
       colArray[i * 3 + 2] = c.b
     }
-    return { particles: parts, geometry: geo, colors: colArray }
+    return { particles: parts, geometry: geo }
   }, [])
 
   useFrame((_, delta) => {
@@ -89,9 +107,18 @@ export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) 
       groupRef.current.children.forEach((child) => {
         if (child.type === 'Mesh') {
           const mat = (child as THREE.Mesh).material as THREE.MeshBasicMaterial
-          mat.opacity = Math.max(0, (child.userData.baseOpacity as number ?? 0.8) - t * 1.5)
+          mat.opacity = Math.max(0, (child.userData.baseOpacity as number ?? 0.8) - t * 1.2)
         }
       })
+    }
+
+    // Ground ripple shockwave — expands outward and fades
+    if (rippleRef.current) {
+      const rippleScale = 1 + t * 8
+      rippleRef.current.scale.set(rippleScale, rippleScale, rippleScale)
+      const mat = rippleRef.current.material as THREE.MeshBasicMaterial
+      mat.opacity = Math.max(0, 0.4 * (1 - t))
+      mat.color.setHSL(0.05 + t * 0.1, 0.8, 0.5 - t * 0.3)
     }
 
     // Particles
@@ -115,6 +142,18 @@ export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) 
 
   return (
     <group ref={groupRef} position={position}>
+      {/* Ground ripple shockwave — expands along terrain surface */}
+      <mesh ref={rippleRef} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 1.5, 48]} />
+        <meshBasicMaterial
+          color="#ff8844"
+          transparent
+          opacity={0.4}
+          side={THREE.DoubleSide}
+          depthWrite={false}
+        />
+      </mesh>
+
       {/* Expanding shockwave ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} userData={{ baseOpacity: 0.8 }}>
         <ringGeometry args={[0.5, 1.5, 32]} />
@@ -143,7 +182,7 @@ export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) 
       <points ref={pointsRef} frustumCulled={false}>
         <primitive object={geometry} attach="geometry" />
         <pointsMaterial
-          size={0.35}
+          size={0.45}
           vertexColors
           transparent
           opacity={1}

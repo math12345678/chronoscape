@@ -1,9 +1,10 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useCallback } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { getTerrainHeight } from '../../terrain'
+import { useStore } from '../../store'
 
-export const SHRINE_POSITION: [number, number, number] = [18, 0, -8]
+export const SHRINE_POSITION: [number, number, number] = [35, 0, -15]
 
 /**
  * The Time Investment Altar — a sacred structure where players
@@ -21,10 +22,23 @@ export const TimeShrine = () => {
   const terrainY = getTerrainHeight(SHRINE_POSITION[0], SHRINE_POSITION[2])
   const shrinePos: [number, number, number] = [SHRINE_POSITION[0], terrainY, SHRINE_POSITION[2]]
 
+  const requestOpenPanel = useStore((s) => s.requestOpenPanel)
+  const inventory = useStore((s) => s.inventory)
+  const upgrades = useStore((s) => s.upgrades)
+  // Check if player can afford any upgrade
+  const canAffordAny = upgrades.capacityBoost < 5 && inventory.raw >= 25 * (upgrades.capacityBoost + 1)
+    || upgrades.haste < 5 && inventory.vapour >= 15 * (upgrades.haste + 1)
+    || upgrades.magnitude < 5 && inventory.liquid >= 10 * (upgrades.magnitude + 1)
+    || upgrades.endurance < 5 && inventory.crystal >= 5 * (upgrades.endurance + 1)
+
   const userData = useMemo(
     () => ({ interactable: true, type: 'shrine' as const, prompt: '[I] Invest at the Time Shrine' }),
     [],
   )
+
+  const handleClick = useCallback(() => {
+    requestOpenPanel('shrine')
+  }, [requestOpenPanel])
 
   useFrame((_, delta) => {
     bobPhase.current += delta
@@ -36,7 +50,14 @@ export const TimeShrine = () => {
 
     if (crystalRef.current) {
       const mat = crystalRef.current.material as THREE.MeshStandardMaterial
-      mat.emissiveIntensity = 0.5 + Math.sin(bobPhase.current * 1.5) * 0.3
+      const wealthBoost = canAffordAny ? 0.6 : 0
+      mat.emissiveIntensity = 0.5 + Math.sin(bobPhase.current * 1.5) * (0.3 + wealthBoost)
+      // Shift color toward gold when you can afford something
+      if (canAffordAny) {
+        mat.emissive.setHex(0xffcc00)
+      } else {
+        mat.emissive.setHex(0xffaa00)
+      }
       crystalRef.current.rotation.y += delta * 0.4
     }
 
@@ -47,7 +68,8 @@ export const TimeShrine = () => {
 
     if (glowRef.current) {
       const mat = glowRef.current.material as THREE.MeshBasicMaterial
-      mat.opacity = 0.2 + Math.sin(bobPhase.current) * 0.1
+      const wealthBoost = canAffordAny ? 0.3 : 0
+      mat.opacity = 0.2 + Math.sin(bobPhase.current) * (0.1 + wealthBoost)
     }
   })
 
@@ -74,7 +96,7 @@ export const TimeShrine = () => {
       </mesh>
 
       {/* Central crystal — the heart of the shrine */}
-      <mesh ref={crystalRef} position={[0, 1.1, 0]} castShadow onClick={() => {}} userData={userData}>
+      <mesh ref={crystalRef} position={[0, 1.1, 0]} castShadow onClick={handleClick} userData={userData}>
         <octahedronGeometry args={[0.35, 0]} />
         <meshStandardMaterial
           color="#ffdd44"

@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useFrameThrottled } from '../hooks/useFrameThrottled'
 
 const STAR_COUNT = 2000
 const FIELD_RADIUS = 120
@@ -59,7 +59,7 @@ export const Starfield = () => {
     return { geometry: geo, twinkleIndices: twinkles }
   }, [])
 
-  useFrame((_, delta) => {
+  useFrameThrottled((_, delta) => {
     time.current += delta
 
     if (groupRef.current) {
@@ -78,7 +78,7 @@ export const Starfield = () => {
       }
       sizeAttr.needsUpdate = true
     }
-  })
+  }, 3)
 
   return (
     <group ref={groupRef}>

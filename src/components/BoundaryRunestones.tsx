@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useFrameThrottled } from '../hooks/useFrameThrottled'
 import { ISLAND_SIZE } from '../config/constants'
 import { getTerrainHeight } from '../terrain'
 
@@ -28,9 +29,9 @@ export const BoundaryRunestones = () => {
     return result
   }, [])
 
-  useFrame((_, delta) => {
+  useFrameThrottled((_, delta) => {
     time.current += delta
-  })
+  }, 4)
 
   return (
     <group>

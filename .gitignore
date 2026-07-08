@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 .gstack/
+
+# External / non-game
+/archive/
+/Cubyz-master/
+/Screenshot*.png
+
+# Env / local data
+.env
+.env.*
+/data/

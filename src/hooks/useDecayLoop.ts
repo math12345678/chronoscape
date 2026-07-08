@@ -26,24 +26,28 @@ export function useDecayLoop() {
     let anomalyTickCounter = 0
 
     const tick = () => {
-      const now = performance.now()
-      const dt = (now - lastTick.current) / 1000 // seconds elapsed
-      lastTick.current = now
+      try {
+        const now = performance.now()
+        const dt = (now - lastTick.current) / 1000 // seconds elapsed
+        lastTick.current = now
 
-      if (dt > 0 && dt < 1) {
-        // Check for Time Squall anomaly multiplier (from store type)
-        const anomalyMultiplier = useStore.getState().anomalyDecayMultiplier
+        if (dt > 0 && dt < 1) {
+          // Check for Time Squall anomaly multiplier (from store type)
+          const anomalyMultiplier = useStore.getState().anomalyDecayMultiplier
 
-        // Apply anomaly multiplier to decay
-        decayVapour(dt * anomalyMultiplier)
-        decayRaw(dt * anomalyMultiplier)
-        tickMarket(dt)
-      }
+          // Apply anomaly multiplier to decay
+          decayVapour(dt * anomalyMultiplier)
+          decayRaw(dt * anomalyMultiplier)
+          tickMarket(dt)
+        }
 
-      // Clean up expired blocks (every ~60 frames)
-      anomalyTickCounter++
-      if (anomalyTickCounter % 60 === 0) {
-        cleanupExpiredBlocks()
+        // Clean up expired blocks (every ~60 frames)
+        anomalyTickCounter++
+        if (anomalyTickCounter % 60 === 0) {
+          cleanupExpiredBlocks()
+        }
+      } catch (err) {
+        console.error('[DecayLoop] tick error:', err)
       }
 
       rafId = requestAnimationFrame(tick)
