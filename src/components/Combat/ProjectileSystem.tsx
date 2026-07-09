@@ -20,6 +20,24 @@ import {
   setWeaponModifiers,
   rollWeaponModifiers,
 } from '../../systems/WeaponModifierSystem'
+import { getPrestigeFireRateBonus } from '../PrestigeSystem'
+import { getAchievementPerkModifier } from '../../systems/AchievementPerks'
+import { getWonderBonus } from '../../systems/MegaStructures'
+import { getMutationModifier } from '../../systems/ChronoGenetics'
+import { getEnchantModifier } from '../../systems/ChronoEnchanting'
+
+// ── Combat stat aggregation ──────────────────────────────
+// Achievements, Mega Structures, Genetics mutations, and Enchanting all
+// compute a 'damage'/'fireRate' modifier but previously had zero callers —
+// none of them affected actual combat. This pulls them all in.
+function getCombatStatMultiplier(type: 'damage' | 'fireRate'): number {
+  const additive =
+    getAchievementPerkModifier(type) +
+    getWonderBonus(type) +
+    getMutationModifier(type) +
+    getEnchantModifier(type)
+  return 1 + additive
+}
 
 // ── Critical hit system ──────────────────────────────
 let _critChance = 0.15
@@ -58,7 +76,7 @@ export function createProjectile(pos: THREE.Vector3, dir: THREE.Vector3, weaponI
   const mesh = new THREE.Mesh(projGeo, mat)
   mesh.position.copy(pos)
 
-  const bonus = getPlayerDamageBonus()
+  const bonus = getPlayerDamageBonus() * getCombatStatMultiplier('damage')
   const isCrit = isCriticalHit()
   const critMult = isCrit ? getCritDamageMultiplier() : 1
   return {
@@ -76,13 +94,31 @@ export function createProjectile(pos: THREE.Vector3, dir: THREE.Vector3, weaponI
   }
 }
 
+// ── Fire rate enforcement ────────────────────────────────
+// Previously nothing gated shot cadence: every weapon fired at whatever
+// rate the player could click/press Q, and the fireRate stat (crafted
+// weapon modifiers, achievement perks, mega structure wonders, genetics,
+// enchanting, prestige) had no effect on anything. This is now the single
+// choke point all fire attempts go through.
+let _lastFireTime = -Infinity
+export function getEffectiveFireRate(weaponId: WeaponId): number {
+  const effective = getEffectiveWeaponStats(weaponId)
+  return effective.fireRate * getCombatStatMultiplier('fireRate') * getPrestigeFireRateBonus()
+}
+
 /** Fire a projectile from camera position in camera direction */
 export function fireProjectile(): boolean {
   const state = useStore.getState()
   const weapon = _equippedWeapon
   if (!weapon) return false
   const effective = getEffectiveWeaponStats(weapon)
+
+  const minInterval = 1000 / Math.max(0.1, getEffectiveFireRate(weapon))
+  const now = performance.now()
+  if (now - _lastFireTime < minInterval) return false
+
   if (state.inventory.liquid < effective.ammoCost) { playEmptyClickSound(); return false }
+  _lastFireTime = now
 
   useStore.setState((s) => ({
     inventory: { ...s.inventory, liquid: s.inventory.liquid - effective.ammoCost },
@@ -162,6 +198,7 @@ export function fireProjectile(): boolean {
 
 let _equippedWeapon: WeaponId | null = null
 let _lastCamera: THREE.Camera | null = null
+let _qHeld = false
 
 // ── Weapon ownership & purchase ──────────────────────────
 let _ownedWeapons: Set<WeaponId> = new Set(['energyPistol'])
@@ -262,27 +299,41 @@ export const ProjectileManager = () => {
     initWeaponModifiers()
   }, [])
 
-  // Keyboard: Q to fire, scroll to cycle weapons
+  // Keyboard: Q to fire (hold for auto-fire, gated by effective fire rate), scroll to cycle weapons
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'q' || e.key === 'Q') {
+        _qHeld = true
         if (!isPlayerDriving()) fireProjectile()
       }
     }
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'q' || e.key === 'Q') _qHeld = false
+    }
+    const handleBlur = () => { _qHeld = false }
     const handleWheel = (e: WheelEvent) => {
       if (!document.pointerLockElement) return
       if (e.deltaY < 0) cycleWeapon(1)
       else if (e.deltaY > 0) cycleWeapon(-1)
     }
-    window.addEventListener('keydown', handleKey)
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
     window.addEventListener('wheel', handleWheel)
     return () => {
-      window.removeEventListener('keydown', handleKey)
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
       window.removeEventListener('wheel', handleWheel)
     }
   }, [])
 
   useFrame((_, delta) => {
+    // Auto-fire while Q is held — cadence enforced inside fireProjectile()
+    if (_qHeld && !isPlayerDriving() && document.pointerLockElement) {
+      fireProjectile()
+    }
+
     // Update projectiles
     for (let i = activeProjectiles.length - 1; i >= 0; i--) {
       const p = activeProjectiles[i]

@@ -290,7 +290,7 @@ export const HealthHUD = () => {
 
             {/* Controls */}
             <div className="mt-2 pt-2 border-t border-white/[0.03] flex gap-2 justify-center text-[7px] text-gray-600 font-mono">
-              <span>Q Fire</span>
+              <span>Hold Q Fire</span>
               <span>·</span>
               <span>Scroll Cycle</span>
               <span>·</span>

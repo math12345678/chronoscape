@@ -196,7 +196,7 @@ export const PauseOverlay = () => {
               <p className="text-gray-600 text-[9px] font-mono tracking-[0.1em] uppercase space-x-3">
                 <span>R Refine</span>
                 <span>H Heal</span>
-                <span>Q Fire</span>
+                <span>Hold Q Fire</span>
                 <span>1 Build</span>
                 <span>Shift Sprint</span>
                 <span>F1 Help</span>
