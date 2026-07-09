@@ -10,6 +10,9 @@ import { getWorldTerrainHeight } from './InfiniteWorld'
 import { publishCameraDirection } from './UI/Compass'
 import { isPlayerDriving } from './Vehicles/HoverVehicle'
 import { getRelicSpeedBonus } from '../systems/RelicForging'
+import { getAscensionSpeedBonus } from '../systems/ChronoAscension'
+import { getCompanionSpeedBonus } from '../systems/TimeCompanions'
+import { getMountSpeedBonus, getMountJumpBonus } from '../systems/MountsSystem'
 
 // ── Landing / Sprint impact particles (pre-allocated pool) ──
 
@@ -222,7 +225,7 @@ export const PlayerController = () => {
         if (!state.selectedBlockType && !jumpRef.current.isJumping) {
           const j = jumpRef.current
           if (performance.now() - jumpCooldown.current < 200) return
-          j.velocity = 4.2
+          j.velocity = 4.2 * (1 + getMountJumpBonus() / 100)
           j.isJumping = true
           j.wasPressed = true
           jumpCooldown.current = performance.now()
@@ -299,7 +302,7 @@ export const PlayerController = () => {
       }
     }
     const sprintMult = (isSprinting && canSprint) ? 2.2 : 1
-    const effectiveSpeed = PLAYER_SPEED * (1 + hasteLevel * 0.1) * (1 + getRelicSpeedBonus()) * sprintMult
+    const effectiveSpeed = PLAYER_SPEED * (1 + hasteLevel * 0.1) * (1 + getRelicSpeedBonus() + getCompanionSpeedBonus() + getMountSpeedBonus() / 100) * getAscensionSpeedBonus() * sprintMult
     speedRef.current = effectiveSpeed
 
     // Expose position for UI effects (speed lines, etc.)

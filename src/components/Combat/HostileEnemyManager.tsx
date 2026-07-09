@@ -27,6 +27,10 @@ import {
   getRelicLootBonus,
 } from '../../systems/RelicForging'
 import { healPlayerAmount } from './HealthTracker'
+import { getTalentDropMultiplier } from '../../systems/ChronoTalents'
+import { getAscensionDropBonus } from '../../systems/ChronoAscension'
+import { getCompanionLootBonus } from '../../systems/TimeCompanions'
+import { getTotalLootBonus } from '../../systems/InfiniteProgression'
 
 // ── Types ──────────────────────────────────────────────
 interface CombatEnemy {
@@ -331,7 +335,7 @@ export function getAllEnemyMinimapData(): { x: number; z: number; type: EnemyTyp
 /** Apply damage to the player from a specific enemy attack, reflecting a
  *  fraction back at the attacker if Time Thorns relics are equipped. */
 function applyPlayerDamage(attacker: CombatEnemy, amount: number): number {
-  const dealt = damagePlayer(amount)
+  const dealt = damagePlayer(amount, attacker.type)
   const thorns = getRelicThornsReflectFraction()
   if (thorns > 0 && dealt > 0) {
     damageEnemy(attacker.id, Math.round(dealt * thorns))
@@ -370,8 +374,9 @@ function killEnemy(id: string) {
   }
   const loot = lootTable[e.type] || lootTable.wraith
   // Relic Forging loot bonus (rolled 'loot' stats + Infinite Greed passive) +
-  // flat resources from Resource Shower — was previously never consumed anywhere.
-  const lootMult = 1 + getRelicLootBonus()
+  // Greed Is Good talent + Ascension loot bonus — none of these were
+  // previously consumed anywhere.
+  const lootMult = (1 + getRelicLootBonus() + getCompanionLootBonus() + getTotalLootBonus()) * getTalentDropMultiplier() * getAscensionDropBonus()
   const shower = getRelicResourceShowerAmount()
   useStore.setState(s => ({
     inventory: {

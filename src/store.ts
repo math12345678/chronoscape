@@ -3,6 +3,15 @@ import { CAPACITY, DECAY_CONFIG, BLOCK_COST, BLOCK_REFUND_RATE, VAPOUR_BLOCK_DEC
 import type { ChallengeType } from './config/constants'
 import { triggerShake } from './hooks/useScreenShake'
 import { getPrestigeCapacityBonus, getPrestigeHarvestBonus } from './components/PrestigeSystem'
+import {
+  getTalentRefineMultiplier,
+  getTalentBlockCostReduction,
+  getTalentDecayReduction,
+  getTalentBlockRefundBonus,
+  getTalentTradeMultiplier,
+} from './systems/ChronoTalents'
+import { getResearchDecayBonus, getResearchExplosionBonus } from './systems/ResearchLab'
+import { getAscensionExplosionBonus } from './systems/ChronoAscension'
 
 // ── Types ───────────────────────────────────────────────
 
@@ -546,7 +555,8 @@ export const useStore = create<GameState>()((set, get) => ({
 
     const ratio = REFINE_RATIOS[to]
     if (!ratio || ratio <= 0) return false
-    const cost = ratio * amount
+    // Efficient Refine talent reduces raw cost per unit refined
+    const cost = (ratio * amount) / getTalentRefineMultiplier()
     if (state.inventory.raw < cost) return false
 
     const cap = state.getCurrentCapacity(to as keyof typeof CAPACITY)
@@ -648,16 +658,19 @@ export const useStore = create<GameState>()((set, get) => ({
 
     if (state.blocks[id]) return false
 
-    const cost = BLOCK_COST[type] ?? 5
+    // Eco Friendly talent reduces block placement cost
+    const cost = Math.max(1, Math.round((BLOCK_COST[type] ?? 5) * (1 - getTalentBlockCostReduction())))
     const resourceKey = type === 'vapour' ? 'vapour' as const : 'crystal' as const
     if (state.inventory[resourceKey] < cost) return false
 
     const now = Date.now()
+    // Decay Resist talent extends how long Vapour blocks last before despawning
+    const decayLifetime = VAPOUR_BLOCK_DECAY_MS * (1 + getTalentDecayReduction() + getResearchDecayBonus())
     const block: BlockData = {
       id,
       type,
       placedAt: now,
-      decayDeadline: type === 'vapour' ? now + VAPOUR_BLOCK_DECAY_MS : null,
+      decayDeadline: type === 'vapour' ? now + decayLifetime : null,
       ownerId: 'player',
     }
 
@@ -684,7 +697,8 @@ export const useStore = create<GameState>()((set, get) => ({
     if (!block) return false
 
     const cost = BLOCK_COST[block.type] ?? 5
-    const refund = Math.floor(cost * BLOCK_REFUND_RATE)
+    // Resourceful talent boosts the refund rate on demolished blocks
+    const refund = Math.floor(cost * (BLOCK_REFUND_RATE + getTalentBlockRefundBonus()))
     const resourceKey = block.type === 'vapour' ? 'vapour' as const : 'crystal' as const
 
     const newBlocks = { ...state.blocks }
@@ -761,7 +775,8 @@ export const useStore = create<GameState>()((set, get) => ({
   tradeLiquidForRenown: (amount: number = 1) => {
     const state = get()
     const rate = state.getCurrentLiquidRate()
-    const cost = rate * amount
+    // Market Sense talent improves the exchange rate
+    const cost = (rate * amount) / getTalentTradeMultiplier()
     if (state.inventory.liquid < cost) return false
     set((s) => ({
       inventory: {
@@ -778,7 +793,8 @@ export const useStore = create<GameState>()((set, get) => ({
   tradeCrystalForRenown: (amount: number = 1) => {
     const state = get()
     const rate = state.getCurrentCrystalRate()
-    const cost = rate * amount
+    // Market Sense talent improves the exchange rate
+    const cost = (rate * amount) / getTalentTradeMultiplier()
     if (state.inventory.crystal < cost) return false
     set((s) => ({
       inventory: {
@@ -1071,16 +1087,17 @@ export const useStore = create<GameState>()((set, get) => ({
       const bz = az + block.pos[2]
       const key = `${bx},${by},${bz}`
       if (state.blocks[key]) continue
-      const cost = BLOCK_COST[block.type] ?? 5
+      const cost = Math.max(1, Math.round((BLOCK_COST[block.type] ?? 5) * (1 - getTalentBlockCostReduction())))
       const resourceKey = block.type === 'vapour' ? 'vapour' as const : 'crystal' as const
       if (state.inventory[resourceKey] < cost) continue
 
       const now = Date.now()
+      const decayLifetime = VAPOUR_BLOCK_DECAY_MS * (1 + getTalentDecayReduction() + getResearchDecayBonus())
       newBlocks[key] = {
         id: key,
         type: block.type,
         placedAt: now,
-        decayDeadline: block.type === 'vapour' ? now + VAPOUR_BLOCK_DECAY_MS : null,
+        decayDeadline: block.type === 'vapour' ? now + decayLifetime : null,
         ownerId: 'player',
       }
       invDelta[resourceKey] = (invDelta[resourceKey] ?? state.inventory[resourceKey]) - cost
@@ -1158,7 +1175,9 @@ export const useStore = create<GameState>()((set, get) => ({
 
   triggerExplosionType: (center, type) => {
     const state = get()
-    const radius = type === 'focused' ? EXPLOSION_RADIUS_FOCUSED : EXPLOSION_RADIUS
+    const baseRadius = type === 'focused' ? EXPLOSION_RADIUS_FOCUSED : EXPLOSION_RADIUS
+    // Efficient Blasting research + Ascension explosion upgrade — were never consumed anywhere
+    const radius = baseRadius * (1 + getResearchExplosionBonus()) * getAscensionExplosionBonus()
     const removed: string[] = []
 
     for (const key of Object.keys(state.blocks)) {

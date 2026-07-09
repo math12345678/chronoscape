@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../store'
+import { tickCalendar } from '../systems/CalendarEvents'
 
 /**
  * Delta-time decay loop (Section 12.1 of design doc).
@@ -39,6 +40,9 @@ export function useDecayLoop() {
           decayVapour(dt * anomalyMultiplier)
           decayRaw(dt * anomalyMultiplier)
           tickMarket(dt)
+          // Calendar/seasonal events were never ticked anywhere — its
+          // resource/fire-rate multipliers always evaluated to a no-op
+          tickCalendar(dt)
         }
 
         // Clean up expired blocks (every ~60 frames)

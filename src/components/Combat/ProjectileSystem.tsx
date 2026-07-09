@@ -26,30 +26,52 @@ import { getWonderBonus } from '../../systems/MegaStructures'
 import { getMutationModifier } from '../../systems/ChronoGenetics'
 import { getEnchantModifier } from '../../systems/ChronoEnchanting'
 import { getRelicDamageBonus, getRelicFireRateBonus, getRelicRangeBonus, getRelicAscendDamageBonus } from '../../systems/RelicForging'
-import { getTotalAscensions } from '../../systems/ChronoAscension'
+import { getTotalAscensions, getAscensionDamageBonus, getAscensionFireRateBonus, getAscensionRangeBonus } from '../../systems/ChronoAscension'
+import {
+  getTalentDamageMultiplier,
+  getTalentFireRateMultiplier,
+  getTalentRangeMultiplier,
+  getTalentDropMultiplier,
+  checkDoubleTap,
+  getLifeStealHeal,
+  getCritDamageMultiplier as getTalentCritDamageMultiplier,
+} from '../../systems/ChronoTalents'
+import { healPlayerAmount } from './HealthTracker'
+import { getResearchRangeBonus } from '../../systems/ResearchLab'
+import { getEventFireRateMultiplier } from '../../systems/CalendarEvents'
+import { getCompanionDamageBonus, getCompanionFireRateBonus } from '../../systems/TimeCompanions'
+import { getWeaponDamageBonus } from '../../systems/CraftingSystem'
 
 // ── Combat stat aggregation ──────────────────────────────
-// Achievements, Mega Structures, Genetics mutations, Enchanting, and Relic
-// Forging all compute a 'damage'/'fireRate' modifier but previously had zero
-// callers — none of them affected actual combat. This pulls them all in.
+// Achievements, Mega Structures, Genetics mutations, Enchanting, Relic
+// Forging, Ascension, and the Talent Tree all compute a 'damage'/'fireRate'
+// modifier but previously had zero callers — none of them affected actual
+// combat. This pulls them all in.
 function getCombatStatMultiplier(type: 'damage' | 'fireRate'): number {
   const relicBonus = type === 'damage'
     ? getRelicDamageBonus() + getRelicAscendDamageBonus(getTotalAscensions())
     : getRelicFireRateBonus()
+  const companionBonus = type === 'damage' ? getCompanionDamageBonus() : getCompanionFireRateBonus()
   const additive =
     getAchievementPerkModifier(type) +
     getWonderBonus(type) +
     getMutationModifier(type) +
     getEnchantModifier(type) +
-    relicBonus
-  return 1 + additive
+    relicBonus +
+    companionBonus
+  const ascensionMult = type === 'damage' ? getAscensionDamageBonus() : getAscensionFireRateBonus()
+  const talentMult = type === 'damage' ? getTalentDamageMultiplier() : getTalentFireRateMultiplier()
+  const eventMult = type === 'fireRate' ? getEventFireRateMultiplier() : 1
+  return (1 + additive) * ascensionMult * talentMult * eventMult
 }
 
 // ── Critical hit system ──────────────────────────────
 let _critChance = 0.15
 export function setCritChance(chance: number) { _critChance = chance }
 export function isCriticalHit(): boolean { return Math.random() < _critChance }
-export function getCritDamageMultiplier(): number { return 2 }
+// Base 2x crit multiplier, boosted by the Crit Mastery talent (was computed
+// by ChronoTalents.getCritDamageMultiplier but never actually consumed).
+export function getCritDamageMultiplier(): number { return 2 * getTalentCritDamageMultiplier() }
 
 interface Projectile {
   id: number
@@ -91,9 +113,9 @@ export function createProjectile(pos: THREE.Vector3, dir: THREE.Vector3, weaponI
     pos: pos.clone(),
     dir: dir.clone(),
     speed: effective.projectileSpeed,
-    damage: Math.round(effective.damage * bonus * critMult),
+    damage: Math.round((effective.damage + getWeaponDamageBonus(weaponId)) * bonus * critMult),
     color: isCrit ? '#ffdd44' : baseColor,
-    range: effective.range + getRelicRangeBonus(),
+    range: (effective.range + getRelicRangeBonus() + getAscensionRangeBonus() + getResearchRangeBonus()) * getTalentRangeMultiplier(),
     traveled: 0,
     mesh,
     isCrit,
@@ -195,6 +217,12 @@ export function fireProjectile(): boolean {
         p2.damage = Math.round(p2.damage * 0.5)
         setTimeout(() => { activeProjectiles.push(p2) }, 80)
       }
+    }
+
+    // Double Tap talent: chance to fire a second free shot (was never rolled anywhere)
+    if (checkDoubleTap()) {
+      const p3 = createProjectile(pos.clone(), dir.clone(), weapon)
+      if (p3) setTimeout(() => { activeProjectiles.push(p3) }, 60)
     }
 
     return true
@@ -362,6 +390,9 @@ export const ProjectileManager = () => {
           const enemyData = hit.object.userData as { enemyId?: string }
           if (enemyData.enemyId && hit.distance < step * 1.5) {
             damageEnemy(enemyData.enemyId, p.damage)
+            // Life Steal talent (was never rolled anywhere)
+            const steal = getLifeStealHeal(p.damage)
+            if (steal > 0) healPlayerAmount(steal)
             // Crit VFX
             if (p.isCrit) {
               queueBurst(p.pos.clone(), 30, '#ffdd44', 8)

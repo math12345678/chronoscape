@@ -16,6 +16,12 @@ import { isPlayerDriving } from './Vehicles/HoverVehicle'
 import { getEquippedWeapon } from './Combat/HostileEnemyManager'
 import { playRefineSound } from '../utils/audio'
 import { getRelicHarvestBonus, getRelicDoubleHarvestChance } from '../systems/RelicForging'
+import { getTalentHarvestMultiplier } from '../systems/ChronoTalents'
+import { getAscensionHarvestBonus } from '../systems/ChronoAscension'
+import { getResearchHarvestBonus } from '../systems/ResearchLab'
+import { getEventResourceMultiplier } from '../systems/CalendarEvents'
+import { getCompanionHarvestBonus } from '../systems/TimeCompanions'
+import { getHarvestCraftMultiplier } from '../systems/CraftingSystem'
 
 // Import the shared WORLD_NODES instance from ResourceNode.tsx
 // to avoid duplicating the terrain generation calls
@@ -234,7 +240,7 @@ function handleLeftClick(target: InteractionTarget, camera?: THREE.Camera) {
       if (extraYield <= 0) break
 
       const baseAmount = HARVEST_AMOUNT + extraYield
-      const multiplier = getComboMultiplier() * (1 + getRelicHarvestBonus())
+      const multiplier = getComboMultiplier() * (1 + getRelicHarvestBonus()) * getTalentHarvestMultiplier() * getAscensionHarvestBonus() * (1 + getResearchHarvestBonus()) * getEventResourceMultiplier() * (1 + getCompanionHarvestBonus()) * getHarvestCraftMultiplier()
       const doubled = Math.random() < getRelicDoubleHarvestChance() ? 2 : 1
       const finalAmount = Math.round(baseAmount * multiplier) * doubled
       state.addRaw(finalAmount)
@@ -351,7 +357,7 @@ function handleLeftClick(target: InteractionTarget, camera?: THREE.Camera) {
       const harvestAmount = target.resourceAmount ?? 5
       const rawYielded = harvestNode(node, harvestAmount)
       const doubled = Math.random() < getRelicDoubleHarvestChance() ? 2 : 1
-      const yielded = Math.round(rawYielded * (1 + getRelicHarvestBonus())) * doubled
+      const yielded = Math.round(rawYielded * (1 + getRelicHarvestBonus()) * getTalentHarvestMultiplier() * getAscensionHarvestBonus() * (1 + getResearchHarvestBonus()) * getEventResourceMultiplier() * (1 + getCompanionHarvestBonus()) * getHarvestCraftMultiplier()) * doubled
       if (yielded > 0) {
         state.addRaw(yielded)
         playHarvestSound()

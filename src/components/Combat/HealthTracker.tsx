@@ -9,6 +9,9 @@ import { activateSpawnProtection } from '../../systems/SpawnProtection'
 import { setTimeScaleTarget } from '../TimeManager'
 import { UI } from '../../utils/uiStyles'
 import { getRelicDefenseBonus, getRelicRegenBonus } from '../../systems/RelicForging'
+import { getAscensionRegenBonus } from '../../systems/ChronoAscension'
+import { getResearchRegenBonus, getResearchArmorBonus, getResearchVoidResistance } from '../../systems/ResearchLab'
+import { getTotalRegenBonus } from '../../systems/InfiniteProgression'
 
 // ── Module-level health state ──────────────────────────
 let _playerHealth = PLAYER_MAX_HEALTH
@@ -22,15 +25,17 @@ export function getKillCount(): number { return _killCount }
 export function isPlayerDead(): boolean { return _isDead }
 
 /** Apply damage from any source. Returns actual damage dealt. */
-export function damagePlayer(amount: number): number {
+export function damagePlayer(amount: number, attackerType?: string): number {
   if (_isDead) return 0
   if (tryBlockDamage(amount)) {
     amount = Math.floor(amount * 0.5)
   }
-  // Relic Forging defense bonus (rolled 'defense' stats + Chrono Fortress passive) —
-  // capped so stacking relics can't make the player fully immune.
-  const defenseReduction = Math.min(0.75, getRelicDefenseBonus())
-  amount = Math.round(amount * (1 - defenseReduction))
+  // Relic Forging defense bonus (rolled 'defense' stats + Chrono Fortress passive),
+  // Void Resistance research (vs. voidWraith specifically) — capped so stacking
+  // can't make the player fully immune.
+  const voidResist = attackerType === 'voidWraith' ? getResearchVoidResistance() : 0
+  const defenseReduction = Math.min(0.75, getRelicDefenseBonus() + voidResist)
+  amount = Math.max(0, Math.round(amount * (1 - defenseReduction)) - getResearchArmorBonus())
   const actual = Math.min(amount, _playerHealth)
   _playerHealth = Math.max(0, _playerHealth - amount)
   _lastDamageTime = performance.now()
@@ -136,7 +141,7 @@ export const HealthRegen = () => {
     if (now - _lastDamageTime < HEALTH_REGEN_DELAY * 1000) return
     const dt = (now - lastTick.current) / 1000
     lastTick.current = now
-    _playerHealth = Math.min(PLAYER_MAX_HEALTH, _playerHealth + HEALTH_REGEN_RATE * (1 + getRelicRegenBonus()) * dt)
+    _playerHealth = Math.min(PLAYER_MAX_HEALTH, _playerHealth + (HEALTH_REGEN_RATE + getAscensionRegenBonus() + getResearchRegenBonus() + getTotalRegenBonus()) * (1 + getRelicRegenBonus()) * dt)
   })
 
   return null
