@@ -7,6 +7,7 @@ import { useStore } from '../../store'
 import { queueBurst } from '../HarvestVFX'
 import { setVehicleSpeedForUI } from '../UI/FuelGauge'
 import { pushTrailPoint, clearTrail } from './VehicleTrail'
+import { triggerShake } from '../../hooks/useScreenShake'
 import {
   getVehicleSpeedBonus,
   getVehicleHandlingBonus,
@@ -67,13 +68,22 @@ export const HoverVehicle = () => {
   const wasActive = useRef(false)
   const driftSmokeTimer = useRef(0)
   const initialFov = useRef(75)
+  const camPos = useRef(new THREE.Vector3())
+  const camLookAt = useRef(new THREE.Vector3())
+  const camRoll = useRef(0)
+  const justActivated = useRef(false)
+  const wasAirborne = useRef(false)
+  const wasBoosting = useRef(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'v' || e.key === 'V') {
         e.preventDefault()
         if (_vehicleActive) deactivateVehicle(camera)
-        else activateVehicle(camera)
+        else {
+          activateVehicle(camera)
+          justActivated.current = true
+        }
       }
     }
     window.addEventListener('keydown', handler)
@@ -209,15 +219,59 @@ export const HoverVehicle = () => {
       groupRef.current.position.y += hoverBob
     }
 
-    // Camera follow
-    cam.position.set(
-      _vehiclePosition.x,
-      _vehiclePosition.y + 1.4 + speed * 0.1,
-      _vehiclePosition.z,
-    )
-    // FOV shift
-    cam.fov = initialFov.current + speed * 8
+    // ── Third-person chase camera ──
+    // Forward unit vector matches the movement basis used above (sin, 0, cos).
+    const fwdX = Math.sin(_vehicleRotation)
+    const fwdZ = Math.cos(_vehicleRotation)
+    const chaseDistance = 3.4 + speed * 1.1
+    const chaseHeight = 1.5 + speed * 0.35 + (_vehicleAirborne ? 0.6 : 0)
+    const desiredX = _vehiclePosition.x - fwdX * chaseDistance
+    const desiredY = _vehiclePosition.y + chaseHeight
+    const desiredZ = _vehiclePosition.z - fwdZ * chaseDistance
+
+    if (justActivated.current) {
+      // Snap instantly on entry so there's no first-frame sweep across the map
+      camPos.current.set(desiredX, desiredY, desiredZ)
+      camLookAt.current.copy(_vehiclePosition)
+      camRoll.current = 0
+      justActivated.current = false
+    } else {
+      const posLerp = 1 - Math.exp(-8 * delta)
+      camPos.current.x += (desiredX - camPos.current.x) * posLerp
+      camPos.current.y += (desiredY - camPos.current.y) * posLerp
+      camPos.current.z += (desiredZ - camPos.current.z) * posLerp
+    }
+    cam.position.copy(camPos.current)
+
+    // Look slightly ahead of the vehicle in its direction of travel, biased up a touch
+    const lookAheadX = _vehiclePosition.x + fwdX * 4
+    const lookAheadZ = _vehiclePosition.z + fwdZ * 4
+    const lookAheadY = _vehiclePosition.y + 0.4
+    const lookLerp = 1 - Math.exp(-10 * delta)
+    camLookAt.current.x += (lookAheadX - camLookAt.current.x) * lookLerp
+    camLookAt.current.y += (lookAheadY - camLookAt.current.y) * lookLerp
+    camLookAt.current.z += (lookAheadZ - camLookAt.current.z) * lookLerp
+    cam.lookAt(camLookAt.current)
+
+    // Bank the camera into drifts/turns for an arcade racer feel
+    const targetRoll = THREE.MathUtils.clamp(-sideSpeed.current * 0.35, -0.35, 0.35)
+    camRoll.current += (targetRoll - camRoll.current) * Math.min(1, delta * 6)
+    cam.rotateZ(camRoll.current)
+
+    // FOV shift — punches out with speed, snappier under boost
+    const targetFov = initialFov.current + speed * 9 + (boosting ? 6 : 0)
+    cam.fov += (targetFov - cam.fov) * Math.min(1, delta * 6)
     cam.updateProjectionMatrix()
+
+    // Impact feedback: landing thump + boost kick
+    if (wasAirborne.current && !_vehicleAirborne) {
+      triggerShake(0.18, 8, 0.25)
+    }
+    wasAirborne.current = _vehicleAirborne
+    if (boosting && !wasBoosting.current) {
+      triggerShake(0.12, 10, 0.2)
+    }
+    wasBoosting.current = boosting
 
     // Deceleration
     if (!isMoving) {
