@@ -15,6 +15,7 @@ import { fireProjectile, cycleWeapon } from './Combat/ProjectileSystem'
 import { isPlayerDriving } from './Vehicles/HoverVehicle'
 import { getEquippedWeapon } from './Combat/HostileEnemyManager'
 import { playRefineSound } from '../utils/audio'
+import { getRelicHarvestBonus, getRelicDoubleHarvestChance } from '../systems/RelicForging'
 
 // Import the shared WORLD_NODES instance from ResourceNode.tsx
 // to avoid duplicating the terrain generation calls
@@ -233,8 +234,9 @@ function handleLeftClick(target: InteractionTarget, camera?: THREE.Camera) {
       if (extraYield <= 0) break
 
       const baseAmount = HARVEST_AMOUNT + extraYield
-      const multiplier = getComboMultiplier()
-      const finalAmount = Math.round(baseAmount * multiplier)
+      const multiplier = getComboMultiplier() * (1 + getRelicHarvestBonus())
+      const doubled = Math.random() < getRelicDoubleHarvestChance() ? 2 : 1
+      const finalAmount = Math.round(baseAmount * multiplier) * doubled
       state.addRaw(finalAmount)
 
       advanceCombo()
@@ -347,7 +349,9 @@ function handleLeftClick(target: InteractionTarget, camera?: THREE.Camera) {
       if (!node) break
 
       const harvestAmount = target.resourceAmount ?? 5
-      const yielded = harvestNode(node, harvestAmount)
+      const rawYielded = harvestNode(node, harvestAmount)
+      const doubled = Math.random() < getRelicDoubleHarvestChance() ? 2 : 1
+      const yielded = Math.round(rawYielded * (1 + getRelicHarvestBonus())) * doubled
       if (yielded > 0) {
         state.addRaw(yielded)
         playHarvestSound()

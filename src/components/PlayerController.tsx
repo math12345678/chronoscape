@@ -9,6 +9,7 @@ import { useStore } from '../store'
 import { getWorldTerrainHeight } from './InfiniteWorld'
 import { publishCameraDirection } from './UI/Compass'
 import { isPlayerDriving } from './Vehicles/HoverVehicle'
+import { getRelicSpeedBonus } from '../systems/RelicForging'
 
 // ── Landing / Sprint impact particles (pre-allocated pool) ──
 
@@ -298,7 +299,7 @@ export const PlayerController = () => {
       }
     }
     const sprintMult = (isSprinting && canSprint) ? 2.2 : 1
-    const effectiveSpeed = PLAYER_SPEED * (1 + hasteLevel * 0.1) * sprintMult
+    const effectiveSpeed = PLAYER_SPEED * (1 + hasteLevel * 0.1) * (1 + getRelicSpeedBonus()) * sprintMult
     speedRef.current = effectiveSpeed
 
     // Expose position for UI effects (speed lines, etc.)

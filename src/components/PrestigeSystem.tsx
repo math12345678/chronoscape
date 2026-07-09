@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { UI, glassPanel } from '../utils/uiStyles'
+import { getRelicPrestigeBonus } from '../systems/RelicForging'
 
 // ── Prestige config ─────────────────────────────────
 export const PRESETIGE_REQUIREMENTS = [
@@ -124,7 +125,21 @@ function calculatePrestige() {
 
   if (newRank > _prestigeRank) {
     _prestigeRank = newRank
-    _prestigeMultiplier = newBonus
+    // Prestige Wealth relic: scales the tier's bonuses up (leaves nukeCharges,
+    // an integer count, alone rather than fractionally scaling it).
+    const wealthMult = 1 + getRelicPrestigeBonus()
+    _prestigeMultiplier = wealthMult === 1 ? newBonus : {
+      ...newBonus,
+      damage: newBonus.damage * wealthMult,
+      harvestYield: newBonus.harvestYield * wealthMult,
+      capacity: newBonus.capacity * wealthMult,
+      interestRate: newBonus.interestRate * wealthMult,
+      dropRate: newBonus.dropRate * wealthMult,
+      speed: newBonus.speed * wealthMult,
+      fireRate: newBonus.fireRate * wealthMult,
+      regen: newBonus.regen * wealthMult,
+      timeCreditMult: newBonus.timeCreditMult * wealthMult,
+    }
   }
 }
 

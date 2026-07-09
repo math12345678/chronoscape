@@ -228,6 +228,84 @@ export function getRelicPassiveValue(passiveId: string): number {
   return total
 }
 
+// ── Combined bonus getters ──────────────────────────────
+// Each relic has two independent bonus sources: the randomly rolled
+// `bonusStats` (damage/harvest/speed/regen/range/loot/fireRate/defense/
+// explosion — same shape used by achievements/mega structures/genetics/
+// enchanting) and a unique named `passive` effect. These getters fold
+// both into one number per gameplay concern so callers don't need to
+// know about the two-source split.
+
+export function getRelicDamageBonus(): number {
+  return getRelicModifiers().damage + getRelicPassiveValue('rp_omnifury')
+}
+
+export function getRelicFireRateBonus(): number {
+  return getRelicModifiers().fireRate + getRelicPassiveValue('rp_omnifury')
+}
+
+/** Flat units added to weapon engagement range (rp_attract has no pickup-radius
+ *  mechanic to hook since resources aren't physical world pickups here). */
+export function getRelicRangeBonus(): number {
+  return getRelicModifiers().range + getRelicPassiveValue('rp_attract')
+}
+
+export function getRelicDefenseBonus(): number {
+  return getRelicModifiers().defense + getRelicPassiveValue('rp_fortress')
+}
+
+export function getRelicSpeedBonus(): number {
+  return getRelicModifiers().speed + getRelicPassiveValue('rp_haste')
+}
+
+export function getRelicLootBonus(): number {
+  return getRelicModifiers().loot + getRelicPassiveValue('rp_greed')
+}
+
+export function getRelicHarvestBonus(): number {
+  return getRelicModifiers().harvest
+}
+
+export function getRelicRegenBonus(): number {
+  return getRelicModifiers().regen
+}
+
+/** Fraction of kill damage returned as player healing (Soul Drain). */
+export function getRelicLifestealFraction(): number {
+  return getRelicPassiveValue('rp_vamp')
+}
+
+/** Fraction of the killed enemy's max health dealt as splash to nearby
+ *  enemies on kill (Volatile Remains). */
+export function getRelicExplodeOnKillFraction(): number {
+  return getRelicPassiveValue('rp_explode')
+}
+
+/** Flat raw resource granted per kill (Resource Shower). */
+export function getRelicResourceShowerAmount(): number {
+  return getRelicPassiveValue('rp_shower')
+}
+
+/** Chance [0,1] to double a harvest (Echo Harvest). */
+export function getRelicDoubleHarvestChance(): number {
+  return getRelicPassiveValue('rp_double')
+}
+
+/** Fraction of incoming damage reflected back at the attacker (Time Thorns). */
+export function getRelicThornsReflectFraction(): number {
+  return getRelicPassiveValue('rp_thorns')
+}
+
+/** Damage bonus scaling with lifetime ascension count (Ascendant Might). */
+export function getRelicAscendDamageBonus(ascensionCount: number): number {
+  return getRelicPassiveValue('rp_might') * ascensionCount
+}
+
+/** Multiplier applied to prestige tier bonuses (Prestige Wealth). */
+export function getRelicPrestigeBonus(): number {
+  return getRelicPassiveValue('rp_wealth')
+}
+
 export function serializeRelics(): ForgedRelic[] {
   return _relics.map((r) => ({ ...r }))
 }

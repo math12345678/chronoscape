@@ -19,6 +19,14 @@ import { useStore } from '../../store'
 import { isInSafeZone, isSpawnProtected } from '../../systems/SpawnProtection'
 import { setMinimapEnemyData } from '../Minimap'
 import { setCompassEnemyData } from '../UI/Compass'
+import {
+  getRelicThornsReflectFraction,
+  getRelicLifestealFraction,
+  getRelicExplodeOnKillFraction,
+  getRelicResourceShowerAmount,
+  getRelicLootBonus,
+} from '../../systems/RelicForging'
+import { healPlayerAmount } from './HealthTracker'
 
 // ── Types ──────────────────────────────────────────────
 interface CombatEnemy {
@@ -266,6 +274,9 @@ export function damageEnemy(id: string, damage: number): boolean {
   if (screen) spawnDamageNumber(screen.x, screen.y - 4, damage, '#ff6644')
 
   if (e.health <= 0) {
+    // Soul Drain relic: heal a fraction of the killing blow's damage
+    const lifesteal = getRelicLifestealFraction()
+    if (lifesteal > 0) healPlayerAmount(damage * lifesteal)
     killEnemy(id)
     return true
   }
@@ -317,6 +328,17 @@ export function getAllEnemyMinimapData(): { x: number; z: number; type: EnemyTyp
   }))
 }
 
+/** Apply damage to the player from a specific enemy attack, reflecting a
+ *  fraction back at the attacker if Time Thorns relics are equipped. */
+function applyPlayerDamage(attacker: CombatEnemy, amount: number): number {
+  const dealt = damagePlayer(amount)
+  const thorns = getRelicThornsReflectFraction()
+  if (thorns > 0 && dealt > 0) {
+    damageEnemy(attacker.id, Math.round(dealt * thorns))
+  }
+  return dealt
+}
+
 /** Kill and remove enemy with effects */
 function killEnemy(id: string) {
   const e = enemies.get(id)
@@ -347,17 +369,34 @@ function killEnemy(id: string) {
     timeTyrant: { raw: 500, liquid: 200, vapour: 100, crystal: 50 },
   }
   const loot = lootTable[e.type] || lootTable.wraith
-  useStore.getState().addRaw(loot.raw ?? 0)
-  // Use generic resource add through store actions
+  // Relic Forging loot bonus (rolled 'loot' stats + Infinite Greed passive) +
+  // flat resources from Resource Shower — was previously never consumed anywhere.
+  const lootMult = 1 + getRelicLootBonus()
+  const shower = getRelicResourceShowerAmount()
   useStore.setState(s => ({
     inventory: {
       ...s.inventory,
-      raw: Math.min(99999, s.inventory.raw + (loot.raw ?? 0)),
-      liquid: Math.min(99999, s.inventory.liquid + (loot.liquid ?? 0)),
-      vapour: Math.min(99999, s.inventory.vapour + (loot.vapour ?? 0)),
-      crystal: Math.min(99999, s.inventory.crystal + (loot.crystal ?? 0)),
+      raw: Math.min(99999, s.inventory.raw + Math.round((loot.raw ?? 0) * lootMult) + shower),
+      liquid: Math.min(99999, s.inventory.liquid + Math.round((loot.liquid ?? 0) * lootMult)),
+      vapour: Math.min(99999, s.inventory.vapour + Math.round((loot.vapour ?? 0) * lootMult)),
+      crystal: Math.min(99999, s.inventory.crystal + Math.round((loot.crystal ?? 0) * lootMult)),
     }
   }))
+
+  // Volatile Remains relic: splash damage to nearby enemies on kill
+  const explodeFraction = getRelicExplodeOnKillFraction()
+  if (explodeFraction > 0) {
+    const splashDamage = Math.round(e.maxHealth * explodeFraction)
+    if (splashDamage > 0) {
+      for (const [otherId, other] of enemies) {
+        if (otherId === id) continue
+        if (other.position.distanceTo(e.position) <= 4) {
+          damageEnemy(otherId, splashDamage)
+        }
+      }
+      queueBurst(e.position.clone(), 16, '#ff8844', 5)
+    }
+  }
 
   // Death burst — spectacular explosions
   if (e.mesh.parent) {
@@ -749,7 +788,7 @@ export const HostileEnemyManager = () => {
           if (e.type === 'temporalSentinel' && canAttack) {
             e.lastAttackTime = now
             const dmgMult = getDamageTakenMultiplier()
-            damagePlayer(Math.round(cfg.damage * dmgMult))
+            applyPlayerDamage(e, Math.round(cfg.damage * dmgMult))
             // Visual: flash + shake from player direction
             ;(e.glow.material as THREE.MeshBasicMaterial).color.setHex(0xffff00)
             setTimeout(() => {
@@ -776,7 +815,7 @@ export const HostileEnemyManager = () => {
             e.position.y = getInfiniteTerrainHeight(e.position.x, e.position.z)
             queueBurst(e.position.clone(), 10, '#66ddff', 4)
             const dmgMult = getDamageTakenMultiplier()
-            damagePlayer(Math.round(cfg.damage * dmgMult))
+            applyPlayerDamage(e, Math.round(cfg.damage * dmgMult))
             e.state = 'chase'
             break
           }
@@ -785,7 +824,7 @@ export const HostileEnemyManager = () => {
           if (e.type === 'chronoBehemoth' && canAttack) {
             e.lastAttackTime = now
             const dmgMult = getDamageTakenMultiplier() * (isEnraged ? 1.3 : 1)
-            damagePlayer(Math.round(cfg.damage * dmgMult))
+            applyPlayerDamage(e, Math.round(cfg.damage * dmgMult))
             triggerShake(0.4, 8)
             queueBurst(e.position.clone(), 30, '#ff44aa', 6)
             ;(e.glow.material as THREE.MeshBasicMaterial).color.setHex(0xff0000)
@@ -804,7 +843,7 @@ export const HostileEnemyManager = () => {
             const rageMult = e.bossPhase === 'rage' ? 1.5 : 1
             const enrageMult = isEnraged ? 1.3 : 1
             const dmgMult = getDamageTakenMultiplier()
-            damagePlayer(Math.round(cfg.damage * dmgMult * rageMult * enrageMult))
+            applyPlayerDamage(e, Math.round(cfg.damage * dmgMult * rageMult * enrageMult))
             triggerShake(0.6, 10)
             // Triple explosion burst
             queueBurst(e.position.clone(), 30, '#ff8800', 8)
@@ -824,7 +863,7 @@ export const HostileEnemyManager = () => {
           if (canAttack && distToPlayer < cfg.attackRange + 1) {
             e.lastAttackTime = now
             const dmgMult = getDamageTakenMultiplier()
-            damagePlayer(Math.round(cfg.damage * dmgMult))
+            applyPlayerDamage(e, Math.round(cfg.damage * dmgMult))
             // Lunge forward for visual feedback
             const lunge = new THREE.Vector3().copy(playerPos).sub(e.position).normalize().multiplyScalar(0.3)
             e.position.x += lunge.x

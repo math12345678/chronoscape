@@ -8,6 +8,7 @@ import { playDamageSound } from '../../utils/audio'
 import { activateSpawnProtection } from '../../systems/SpawnProtection'
 import { setTimeScaleTarget } from '../TimeManager'
 import { UI } from '../../utils/uiStyles'
+import { getRelicDefenseBonus, getRelicRegenBonus } from '../../systems/RelicForging'
 
 // ── Module-level health state ──────────────────────────
 let _playerHealth = PLAYER_MAX_HEALTH
@@ -26,6 +27,10 @@ export function damagePlayer(amount: number): number {
   if (tryBlockDamage(amount)) {
     amount = Math.floor(amount * 0.5)
   }
+  // Relic Forging defense bonus (rolled 'defense' stats + Chrono Fortress passive) —
+  // capped so stacking relics can't make the player fully immune.
+  const defenseReduction = Math.min(0.75, getRelicDefenseBonus())
+  amount = Math.round(amount * (1 - defenseReduction))
   const actual = Math.min(amount, _playerHealth)
   _playerHealth = Math.max(0, _playerHealth - amount)
   _lastDamageTime = performance.now()
@@ -59,6 +64,13 @@ export function healPlayer(): boolean {
   // Dispatch heal visual effect event
   window.dispatchEvent(new CustomEvent('heal-effect'))
   return true
+}
+
+/** Heal the player by a flat amount with no resource cost (e.g. lifesteal relics). */
+export function healPlayerAmount(amount: number): void {
+  if (_isDead || amount <= 0) return
+  _playerHealth = Math.min(PLAYER_MAX_HEALTH, _playerHealth + amount)
+  window.dispatchEvent(new CustomEvent('heal-effect'))
 }
 
 /** Increment kill tracking and award resources */
@@ -124,7 +136,7 @@ export const HealthRegen = () => {
     if (now - _lastDamageTime < HEALTH_REGEN_DELAY * 1000) return
     const dt = (now - lastTick.current) / 1000
     lastTick.current = now
-    _playerHealth = Math.min(PLAYER_MAX_HEALTH, _playerHealth + HEALTH_REGEN_RATE * dt)
+    _playerHealth = Math.min(PLAYER_MAX_HEALTH, _playerHealth + HEALTH_REGEN_RATE * (1 + getRelicRegenBonus()) * dt)
   })
 
   return null

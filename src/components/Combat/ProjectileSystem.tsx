@@ -25,17 +25,23 @@ import { getAchievementPerkModifier } from '../../systems/AchievementPerks'
 import { getWonderBonus } from '../../systems/MegaStructures'
 import { getMutationModifier } from '../../systems/ChronoGenetics'
 import { getEnchantModifier } from '../../systems/ChronoEnchanting'
+import { getRelicDamageBonus, getRelicFireRateBonus, getRelicRangeBonus, getRelicAscendDamageBonus } from '../../systems/RelicForging'
+import { getTotalAscensions } from '../../systems/ChronoAscension'
 
 // ── Combat stat aggregation ──────────────────────────────
-// Achievements, Mega Structures, Genetics mutations, and Enchanting all
-// compute a 'damage'/'fireRate' modifier but previously had zero callers —
-// none of them affected actual combat. This pulls them all in.
+// Achievements, Mega Structures, Genetics mutations, Enchanting, and Relic
+// Forging all compute a 'damage'/'fireRate' modifier but previously had zero
+// callers — none of them affected actual combat. This pulls them all in.
 function getCombatStatMultiplier(type: 'damage' | 'fireRate'): number {
+  const relicBonus = type === 'damage'
+    ? getRelicDamageBonus() + getRelicAscendDamageBonus(getTotalAscensions())
+    : getRelicFireRateBonus()
   const additive =
     getAchievementPerkModifier(type) +
     getWonderBonus(type) +
     getMutationModifier(type) +
-    getEnchantModifier(type)
+    getEnchantModifier(type) +
+    relicBonus
   return 1 + additive
 }
 
@@ -87,7 +93,7 @@ export function createProjectile(pos: THREE.Vector3, dir: THREE.Vector3, weaponI
     speed: effective.projectileSpeed,
     damage: Math.round(effective.damage * bonus * critMult),
     color: isCrit ? '#ffdd44' : baseColor,
-    range: effective.range,
+    range: effective.range + getRelicRangeBonus(),
     traveled: 0,
     mesh,
     isCrit,
