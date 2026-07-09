@@ -146,7 +146,6 @@ export const TimeGearManager = () => {
 
     // ── Speed Boots ──
     if (_activeGear === 'speedBoots' && _unlockedGear.has('speedBoots')) {
-      const speedCost = GEAR.speedBoots.costPerSecond * delta
       // The PlayerController reads the sprint multiplier from upgrades, but we can
       // apply a passive boost here by modifying the player's effective speed.
       // We'll store the active gear in a module-level variable for PlayerController to read.

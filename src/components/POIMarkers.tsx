@@ -130,8 +130,6 @@ const SinglePOIMarker = ({ poi }: { poi: POIInstance }) => {
     }
   }
 
-  const poiName = poi.name || `Unknown ${poi.type}`
-
   return (
     <group ref={groupRef} position={[poi.x, terrainY, poi.z]}>
       {/* Ground ring */}

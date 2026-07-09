@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
-import type { AuctionItem } from '../../config/finance'
 import {
-  getAuctionItems, getAuctionHistory, getTotalBids,
-  placeBid, tickAuctions, initAuction,
+  placeBid,
   _auctionItems, _auctionHistory, _totalBidsPlaced,
 } from '../../systems/AuctionSystem'
 

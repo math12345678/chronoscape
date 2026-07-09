@@ -42,7 +42,6 @@ export function tickBounties() {
   _bountyProgress[_activeBountyId] = Math.min(bounty.targetCount, kills)
 
   if (_bountyProgress[_activeBountyId] >= bounty.targetCount) {
-    const state = useStore.getState()
     useStore.setState((s) => ({
       inventory: {
         ...s.inventory,

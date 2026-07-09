@@ -22,7 +22,7 @@ const TIER_LABELS = ['I', 'II', 'III', 'IV']
 
 export const TalentTreeUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [activeTree, setActiveTree] = useState<TalentTree>('combat')
-  const [animFrame, setAnimFrame] = useState(0)
+  const [, setAnimFrame] = useState(0)
   const renown = useStore((s) => s.inventory.renown)
 
   // Refresh talent points from renown
@@ -44,7 +44,7 @@ export const TalentTreeUI = ({ open, onClose }: { open: boolean; onClose: () => 
   const talents = useMemo(() => {
     if (!open) return [] as ReturnType<typeof getTalentsByTree>
     return getTalentsByTree(activeTree)
-  }, [open, activeTree, animFrame])
+  }, [open, activeTree])
 
   if (!open) return null
 
@@ -134,7 +134,6 @@ export const TalentTreeUI = ({ open, onClose }: { open: boolean; onClose: () => 
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {tierTalents.map((talent) => {
               const isMaxed = talent.rank >= talent.maxRank
-              const canAfford = talentState.talentPoints > 0 && talent.rank < talent.maxRank
                   // Use direct check
                   const meetsPrereqs = talent.prerequisites.length === 0 ||
                     talent.prerequisites.every((p) => (talentState.ranks[p] ?? 0) >= 1)

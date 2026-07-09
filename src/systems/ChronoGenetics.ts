@@ -21,7 +21,6 @@ export interface MutationDef {
   checkUnlock: () => boolean
 }
 
-import { useStore } from '../store'
 import { getPrestigeRank } from '../components/PrestigeSystem'
 
 const MUTATIONS: MutationDef[] = [

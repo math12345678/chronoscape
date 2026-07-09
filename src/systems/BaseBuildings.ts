@@ -160,7 +160,6 @@ export function placeBuilding(id: BuildingId, position: [number, number, number]
   if (!def) return false
   if (!canPlaceBuilding(id)) return false
 
-  const state = useStore.getState()
   useStore.setState((s) => ({
     inventory: {
       ...s.inventory,

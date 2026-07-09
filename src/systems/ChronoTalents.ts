@@ -536,7 +536,6 @@ export function canPurchaseTalent(id: TalentId, renownHeld: number): boolean {
 /** Purchase a talent rank */
 export function purchaseTalent(id: TalentId, renownHeld: number): boolean {
   if (!canPurchaseTalent(id, renownHeld)) return false
-  const cost = (ALL_TALENTS[id].requiresRenownPerRank ?? 0)
   _talentState.ranks[id] = (_talentState.ranks[id] ?? 0) + 1
   _talentState.talentPoints -= 1
   _talentState.totalSpent += 1

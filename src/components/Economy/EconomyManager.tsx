@@ -48,7 +48,7 @@ export const EconomyManager = () => {
     const interval = setInterval(() => {
       // Run all registered tick callbacks
       for (const fn of _tickCallbacks) {
-        try { fn() } catch (e) { /* per-callback resilience */ }
+        try { fn() } catch { /* per-callback resilience */ }
       }
     }, _tickInterval)
 
@@ -68,7 +68,7 @@ export const EconomyManager = () => {
 export function registerAllEconomyTicks() {
   // Stock market tick
   registerTickCallback(() => {
-    tickMarket(5)
+    tickMarket()
   })
 
   // Savings interest

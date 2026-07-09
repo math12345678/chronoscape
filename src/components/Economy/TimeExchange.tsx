@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { EXCHANGE_POSITION } from '../../config/economy'
@@ -13,9 +13,6 @@ export const TimeExchange = () => {
   const tickerRef = useRef<THREE.Mesh>(null)
   const time = useRef(0)
   const pos = EXCHANGE_POSITION
-
-  // Pre-compute ticker text geometry
-  const tickerText = useMemo(() => [...'⟐ TIME EXCHANGE · LIVE PRICES · BUY LOW SELL HIGH ⟐'], [])
 
   useFrame((_, delta) => {
     time.current += delta

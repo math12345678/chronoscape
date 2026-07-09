@@ -47,7 +47,7 @@ const BlockPlaceEffect = ({ position, type }: { position: [number, number, numbe
     flash.style.opacity = '0.15'
     requestAnimationFrame(() => { flash.style.opacity = '0' })
     setTimeout(() => { if (flash.parentNode) flash.parentNode.removeChild(flash) }, 200)
-  }, [sounds, type])
+  }, [sounds, type, position])
 
   const color = BLOCK_COLORS[type] ?? '#ffffff'
   const emissive = BLOCK_EMISSIVE[type] ?? '#ffffff'

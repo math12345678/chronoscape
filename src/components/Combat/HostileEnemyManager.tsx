@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { getInfiniteTerrainHeight } from '../../world/chunkTerrain'
-import { ENEMIES, WEAPONS } from '../../config/combat'
+import { ENEMIES } from '../../config/combat'
 import type { EnemyType, WeaponId } from '../../config/combat'
 import { damagePlayer, recordKill } from './HealthTracker'
 import { triggerShake } from '../../hooks/useScreenShake'
@@ -452,7 +452,7 @@ export function clearEnemies() {
 
 /** Reset all enemies: drops aggro and restores health */
 export function resetAllEnemies() {
-  for (const [id, e] of enemies) {
+  for (const [, e] of enemies) {
     e.state = 'idle'
     e.health = e.maxHealth
     e.bossPhase = 'normal'
@@ -638,7 +638,6 @@ export const HostileEnemyManager = () => {
       else e.enrageTimer = Math.max(0, e.enrageTimer - delta * 0.5)
       const isEnraged = isBoss && e.enrageTimer > 60
       const enrageSpeedMult = isEnraged ? 1.4 : 1
-      const enrageDmgMult = isEnraged ? 1.3 : 1
 
       // AI state machine
       switch (e.state) {

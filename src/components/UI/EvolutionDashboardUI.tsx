@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
-import { getAllTiers, getLLMVariants, getBiomeTierAtDistance } from '../../systems/InfiniteWorldGenerator'
+import { getAllTiers } from '../../systems/InfiniteWorldGenerator'
 import { getCurrentEpoch, getTotalContentGenerated } from '../../systems/EvolvingContentEngine'
 import { getDifficultyScore, getEvolutionStage, getActiveModifiers, getSynergies } from '../../systems/AdaptiveDifficultySystem'
 import { getTotalProgressionLevel, getTotalDamageBonus, getTotalHarvestBonus, getTotalSpeedBonus, getTotalDefenseBonus } from '../../systems/InfiniteProgression'
@@ -20,7 +19,6 @@ export const EvolutionDashboardUI = ({ open, onClose }: Props) => {
   if (!open) return null
 
   const tiers = getAllTiers()
-  const variants = getLLMVariants()
   const epoch = getCurrentEpoch()
   const totalContent = getTotalContentGenerated()
   const diffScore = getDifficultyScore()

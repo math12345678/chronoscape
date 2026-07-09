@@ -22,7 +22,7 @@ export function getStockValue(symbol: string): number {
 }
 
 /** Tick the stock market — call every 5 seconds from a component */
-export function tickMarket(dt: number) {
+export function tickMarket() {
   _stocks = _stocks.map((stock) => {
     const drift = (Math.random() - 0.5) * stock.volatility * 0.1
     const meanReversion = (INITIAL_STOCKS.find(s => s.symbol === stock.symbol)!.price - stock.price) * 0.01

@@ -9,7 +9,6 @@ interface Notification {
   fadeOut: boolean
 }
 
-const queue: Notification[] = []
 let _listener: ((n: Notification) => void) | null = null
 
 export function dispatchQuestComplete(id: QuestId) {

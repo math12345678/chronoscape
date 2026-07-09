@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useFrameThrottled } from '../hooks/useFrameThrottled'
 import * as THREE from 'three'
-import { getOutposts, getModuleDefs } from '../systems/ChronoOutposts'
+import { getOutposts } from '../systems/ChronoOutposts'
 import type { Outpost, OutpostModule } from '../systems/ChronoOutposts'
 import { getInfiniteTerrainHeight } from '../world/chunkTerrain'
 

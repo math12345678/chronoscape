@@ -221,7 +221,7 @@ export const TimeVortex = () => {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     side: THREE.DoubleSide,
-  }), [])
+  }), [uniforms])
 
   useFrame((_, delta) => {
     time.current += delta

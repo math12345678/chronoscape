@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
 import {
   getAscensionLevel, getAscensionShards, getTotalLifetimeShards,
   getTotalAscensions, getPendingShards, getUpgradeLevel,

@@ -45,9 +45,10 @@ export const HarvestPopup = () => {
       }
     }
     window.addEventListener('harvest-event', handler)
+    const timersMap = timers.current
     return () => {
       window.removeEventListener('harvest-event', handler)
-      timers.current.forEach((t) => clearTimeout(t))
+      timersMap.forEach((t) => clearTimeout(t))
     }
   }, [add])
 

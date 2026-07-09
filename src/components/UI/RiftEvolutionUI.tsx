@@ -9,7 +9,7 @@ import {
 
 export const RiftEvolutionUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const inventory = useStore((s) => s.inventory)
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

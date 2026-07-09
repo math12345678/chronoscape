@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useStore } from '../../store'
-import { INITIAL_STOCKS, FUNDS } from '../../config/economy'
-import type { StockSymbol, FundId, PortfolioEntry } from '../../config/economy'
+import { FUNDS } from '../../config/economy'
+import type { StockSymbol, FundId } from '../../config/economy'
 import { useSoundEngine } from '../../hooks/useSoundEngine'
 import {
-  getStocks, getPortfolio, getTotalTrades, getStockHoldings, getStockValue,
-  tickMarket, buyStock, sellStock, investInFund, withdrawFromFund,
+  buyStock, sellStock, investInFund, withdrawFromFund,
   getPortfolioValue, getPortfolioPnL,
   _stocks, _portfolio, _totalTrades, _stockHoldings,
 } from '../../systems/ExchangeSystem'
@@ -24,7 +23,7 @@ export const TimeExchangeUI = ({ open, onClose }: TimeExchangeUIProps) => {
   const [, forceUpdate] = useState(0)
   const liquid = useStore((s) => Math.floor(s.inventory.liquid))
   const raw = useStore((s) => Math.floor(s.inventory.raw))
-  const sounds = useSoundEngine()
+  useSoundEngine()
 
   // Re-render every 3s for market updates
   useEffect(() => {
@@ -146,11 +145,11 @@ export const TimeExchangeUI = ({ open, onClose }: TimeExchangeUIProps) => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => { buyStock(tradeSymbol, tradeAmount) ? showMessage(`Bought ${tradeAmount} ${tradeSymbol}`) : showMessage('Not enough Liquid!') }}
+                    <button onClick={() => { if (buyStock(tradeSymbol, tradeAmount)) { showMessage(`Bought ${tradeAmount} ${tradeSymbol}`) } else { showMessage('Not enough Liquid!') } }}
                       className="flex-1 px-3 py-2 bg-green-700/50 hover:bg-green-600/60 text-green-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all active:scale-95">
                       Buy ({(selectedStock.price * tradeAmount).toFixed(0)}≈)
                     </button>
-                    <button onClick={() => { sellStock(tradeSymbol, tradeAmount) ? showMessage(`Sold ${tradeAmount} ${tradeSymbol}`) : showMessage('No position to sell!') }}
+                    <button onClick={() => { if (sellStock(tradeSymbol, tradeAmount)) { showMessage(`Sold ${tradeAmount} ${tradeSymbol}`) } else { showMessage('No position to sell!') } }}
                       className="flex-1 px-3 py-2 bg-red-700/50 hover:bg-red-600/60 text-red-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all active:scale-95">
                       Sell (+{(selectedStock.price * tradeAmount).toFixed(0)}≈)
                     </button>
@@ -252,7 +251,11 @@ export const TimeExchangeUI = ({ open, onClose }: TimeExchangeUIProps) => {
                     {!existing && (
                       <button onClick={() => {
                         const amt = Math.min(fund.maxDeposit, Math.max(fund.minDeposit, 50))
-                        investInFund(fund.id, amt) ? showMessage(`Invested ${amt} Raw in ${fund.name}!`) : showMessage('Not enough Raw or below minimum!')
+                        if (investInFund(fund.id, amt)) {
+                          showMessage(`Invested ${amt} Raw in ${fund.name}!`)
+                        } else {
+                          showMessage('Not enough Raw or below minimum!')
+                        }
                       }}
                         className="w-full py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all active:scale-95"
                         style={{ backgroundColor: fund.color + '30', color: fund.color }}

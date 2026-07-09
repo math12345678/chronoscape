@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import {
   ALL_BUILDINGS, getPlacedBuildings, getBuildingCount, getTotalProduction,
-  canPlaceBuilding, placeBuilding, removeBuilding,
-  getBuildingPlacementPosition,
+  placeBuilding, removeBuilding,
 } from '../../systems/BaseBuildings'
 import type { BuildingId } from '../../systems/BaseBuildings'
 
@@ -11,7 +10,7 @@ export const BuildingUI = ({ open, onClose }: { open: boolean; onClose: () => vo
   const inventory = useStore((s) => s.inventory)
   const [placed, setPlaced] = useState(getPlacedBuildings())
   const [production, setProduction] = useState<Record<string, number>>({})
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

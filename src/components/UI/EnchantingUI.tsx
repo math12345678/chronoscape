@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import {
-  getEnchantingState, getAllProperties, getEnchantCost,
+  getEnchantingState, getAllProperties,
   enchantItem, addEnchantableItem,
 } from '../../systems/ChronoEnchanting'
 
@@ -19,9 +19,11 @@ const ENCHANTABLE_ITEMS = [
 export const EnchantingUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const inv = useStore((s) => s.inventory)
   const [selectedItem, setSelectedItem] = useState<string | null>(null)
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
-  const state = useMemo(() => getEnchantingState(), [refresh, open])
+  // Recomputed every render so it reflects the latest state whenever
+  // `refresh` ticks or the panel opens/closes.
+  const state = getEnchantingState()
 
   useEffect(() => {
     if (!open) return

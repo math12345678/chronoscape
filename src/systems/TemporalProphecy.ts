@@ -174,7 +174,7 @@ export function drawProphecy(): ProphecyCard | null {
 }
 
 /** Check and fulfill prophecies */
-export function checkProphecies(dt: number): ProphecyCard[] {
+export function checkProphecies(): ProphecyCard[] {
   const fulfilled: ProphecyCard[] = []
   const allCards = getCards()
 

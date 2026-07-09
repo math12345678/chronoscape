@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
 import { BOUNTY_POSITION } from '../../config/economy'
 
 /** Bounty Board — a wooden board with pinned bounties. Click to open bounty UI. */

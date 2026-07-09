@@ -2,7 +2,6 @@ import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { getInfiniteTerrainHeight } from '../world/chunkTerrain'
-import { useStore } from '../store'
 import { createProjectile, activeProjectiles } from './Combat/ProjectileSystem'
 
 // ── Module-state ────────────────────────────────────

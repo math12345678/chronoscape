@@ -38,7 +38,7 @@ export const EXPLOSION_EMITTER: EmitterConfig = {
 }
 
 /** Directional emitter — particles go in a specific direction. */
-export function directionalEmitter(dir: [number, number, number], spread = 0.3): EmitterConfig {
+export function directionalEmitter(dir: [number, number, number]): EmitterConfig {
   return {
     shape: { type: 'point' },
     mode: { type: 'direction', dir },

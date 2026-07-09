@@ -73,9 +73,10 @@ export const ControlsHub = () => {
       }
     }
     window.addEventListener('keydown', handler)
+    const timersMap = staggerTimers.current
     return () => {
       window.removeEventListener('keydown', handler)
-      staggerTimers.current.forEach(t => clearTimeout(t))
+      timersMap.forEach(t => clearTimeout(t))
     }
   }, [hasEnteredGame, open, sounds])
 

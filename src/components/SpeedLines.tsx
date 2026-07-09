@@ -103,7 +103,6 @@ export const SpeedLines = () => {
 
       // Line start: behind camera, scrolling toward player
       const zStart = -SPREAD + scroll
-      const zEnd = zStart + LINE_LENGTH
 
       const baseX = campos.x + right.x * p.offsetX + up.x * p.offsetY + forward.x * zStart
       const baseY = campos.y + right.y * p.offsetX + up.y * p.offsetY + forward.y * zStart

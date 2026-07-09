@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import { useFrameThrottled } from '../hooks/useFrameThrottled'
 import * as THREE from 'three'
-import { isChronoShieldActive, isTimeSurgeActive, isTimeFrozen } from '../skills/ChronoSKills'
+import { isChronoShieldActive } from '../skills/ChronoSKills'
 
 // ── Chrono Shield 3D sphere that follows the player ─
 export const ChronoShieldVFX = () => {

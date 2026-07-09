@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { LAB_POSITION } from '../../config/constants'
-import { QUESTS, PLAYER_MAX_HEALTH } from '../../config/combat'
+import { QUESTS } from '../../config/combat'
 import type { QuestId } from '../../config/combat'
-import { getPlayerHealth, getKillCount } from '../Combat/HealthTracker'
-import { getEquippedWeapon } from '../Combat/HostileEnemyManager'
+import { getKillCount } from '../Combat/HealthTracker'
 import { getInfiniteTerrainHeight } from '../../world/chunkTerrain'
 import { useStore } from '../../store'
-import { cycleWeapon, grantWeapon } from '../Combat/ProjectileSystem'
+import { grantWeapon } from '../Combat/ProjectileSystem'
 import { dispatchQuestComplete } from '../UI/QuestCompleteNotification'
 
 // ── Module-level quest state ──────────────────────────
@@ -84,7 +83,6 @@ export function claimQuestReward(id: QuestId): boolean {
   if (!q || !q.completed || q.claimed) return false
 
   const qd = QUESTS[id]
-  const state = useStore.getState()
 
   useStore.setState((s) => ({
     inventory: {

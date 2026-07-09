@@ -16,7 +16,7 @@ const EVENT_ICONS: Record<string, string> = {
 /** Floating HUD showing active world events */
 export const WorldEventsHUD = () => {
   const [events, setEvents] = useState(getActiveWorldEvents())
-  const [total, setTotal] = useState(getTotalEventsTriggered())
+  const [, setTotal] = useState(getTotalEventsTriggered())
 
   useEffect(() => {
     const interval = setInterval(() => {

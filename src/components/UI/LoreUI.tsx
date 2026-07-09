@@ -17,10 +17,11 @@ export const LoreUI = ({ open, onClose }: { open: boolean; onClose: () => void }
   const [filter, setFilter] = useState<LoreCategory | 'all'>('all')
   const [selected, setSelected] = useState<LoreEntry | null>(null)
 
-  const discovered = useMemo(() => getDiscoveredLore(), [open])
-  const discoveredIds = useMemo(() => new Set(discovered.map((l) => l.id)), [discovered])
+  const discovered = open ? getDiscoveredLore() : []
+  const discoveredIds = new Set(discovered.map((l) => l.id))
 
   const filtered = useMemo(() => {
+    if (!open) return []
     const all = getAllLore()
     if (filter === 'all') return all
     return all.filter((l) => l.category === filter)

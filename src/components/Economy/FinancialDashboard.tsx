@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../../store'
 import { getStocks, getPortfolioValue, getStockHoldings, getTotalTrades } from '../../systems/ExchangeSystem'
 import { WEALTH_TIERS } from '../../config/finance'

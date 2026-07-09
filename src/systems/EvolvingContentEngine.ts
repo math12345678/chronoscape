@@ -4,7 +4,7 @@
 // procedural generation.
 
 import { llmGenerateJSON } from '../utils/llmClient'
-import { getBiomeTierAtDistance, evolveBiomeTiers } from './InfiniteWorldGenerator'
+import { evolveBiomeTiers } from './InfiniteWorldGenerator'
 
 // ── Content Evolution Epochs ─────────────────────────────
 
@@ -188,22 +188,6 @@ function shouldTriggerEpoch(): { trigger: boolean; reason: string } {
 
 // ── Generate Epoch Content ───────────────────────────────
 
-function generateEpochFallbackContent(epoch: number): EvolutionEpoch['content'] {
-  const newEnemies = [proceduralEnemy(epoch, 0), proceduralEnemy(epoch, 1)]
-  const newEvents = [proceduralEvent(epoch)]
-  const newResources = [proceduralResource(epoch)]
-  const newEquipment = [proceduralEquipment(epoch)]
-  const newLore: GeneratedLore[] = [{
-    id: `lore_proc_${epoch}`,
-    title: `The ${epoch}${epoch === 1 ? 'st' : epoch === 2 ? 'nd' : epoch === 3 ? 'rd' : 'th'} Evolution`,
-    text: `As the chrono-flow intensifies, new beings emerge from the temporal fold. Epoch ${epoch} marks a significant shift in the world's composition.`,
-    category: 'evolution',
-    discoveredAt: Date.now(),
-  }]
-
-  return { newEnemies, newEvents, newResources, newEquipment, newLore }
-}
-
 export async function triggerEvolutionEpoch(): Promise<EvolutionEpoch | null> {
   if (shouldTriggerEpoch().trigger === false) return null
   const reason = shouldTriggerEpoch().reason
@@ -317,7 +301,7 @@ export function tickEvolutionEngine(dt: number): void {
   }
 
   // Tick active event durations
-  _activeEvents = _activeEvents.filter((e) => {
+  _activeEvents = _activeEvents.filter(() => {
     // Events from epochs have fixed durations
     return true // would need dedicated duration tracking
   })

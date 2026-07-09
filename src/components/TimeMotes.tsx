@@ -37,7 +37,6 @@ export const TimeMotes = () => {
 
       sizes[i] = 0.06 + Math.random() * 0.1
 
-      const bright = 0.6 + Math.random() * 0.4
       colors[i * 3] = 0.9 + Math.random() * 0.1
       colors[i * 3 + 1] = 1.0
       colors[i * 3 + 2] = 0.6 + Math.random() * 0.3

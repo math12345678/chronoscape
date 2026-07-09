@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { isStormActive, getStormColor, getStormIntensity, buyStormShield } from '../StormEvents'
-import { getTimeCreditBalance } from '../../config/timeCredit'
+import { getStormIntensity } from '../StormEvents'
 
 export const StormBanner = () => {
   const [event, setEvent] = useState<{ label: string; description: string; color: string } | null>(null)
@@ -30,8 +29,6 @@ export const StormBanner = () => {
   }, [visible])
 
   if (!visible || !event) return null
-
-  const tc = getTimeCreditBalance()
 
   return (
     <div

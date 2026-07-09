@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 
 interface CritPopup {
   id: number
@@ -12,7 +12,6 @@ let popupId = 0
 
 export const CritPopupManager = () => {
   const [items, setItems] = useState<CritPopup[]>([])
-  const last = useRef(0)
 
   useEffect(() => {
     const handler = (e: Event) => {

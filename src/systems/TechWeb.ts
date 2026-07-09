@@ -110,7 +110,6 @@ export function unlockTech(nodeId: string): boolean {
   if (!canUnlockTech(nodeId)) return false
 
   const node = _techNodes.find(n => n.id === nodeId)!
-  const inv = useStore.getState().inventory
 
   // Deduct cost
   useStore.setState(s => ({

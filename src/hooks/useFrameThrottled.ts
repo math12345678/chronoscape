@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { getFrameSkip, getQualityLevel } from '../utils/performance'
 import type { QualityLevel } from '../utils/performance'

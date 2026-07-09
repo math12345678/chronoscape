@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import {
   getConstructDefs, getDeployed, deployConstruct, upgradeConstruct,
-  repairConstruct, recallConstruct, getConstructEfficiency,
+  repairConstruct, recallConstruct,
 } from '../../systems/AutomationConstructs'
-import type { ConstructType } from '../../systems/AutomationConstructs'
 
 interface Props { open: boolean; onClose: () => void }
 

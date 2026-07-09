@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { getFPS, getQualityLevel } from '../../utils/performance'
 import type { QualityLevel } from '../../utils/performance'
 

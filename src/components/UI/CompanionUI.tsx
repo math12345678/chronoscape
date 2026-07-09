@@ -11,7 +11,7 @@ export const CompanionUI = ({ open, onClose }: { open: boolean; onClose: () => v
   const inventory = useStore((s) => s.inventory)
   const [companions, setCompanions] = useState(getCompanions())
   const [activeId, setActiveId] = useState(getActiveCompanion())
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

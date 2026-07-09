@@ -5,7 +5,6 @@ import {
   claimChunk, buildOutpost, addOutpostModule, repairOutpost,
   abandonOutpost, getOutpostIncome,
 } from '../../systems/ChronoOutposts'
-import type { OutpostModule } from '../../systems/ChronoOutposts'
 
 interface Props { open: boolean; onClose: () => void }
 

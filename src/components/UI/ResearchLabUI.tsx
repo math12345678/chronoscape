@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import {
   ALL_RESEARCH, getResearchState, getActiveResearch, getResearchProgress,
-  startResearch, cancelResearch, isResearchCompleted,
+  startResearch, cancelResearch,
 } from '../../systems/ResearchLab'
 import type { ResearchId } from '../../systems/ResearchLab'
 
@@ -10,7 +10,7 @@ export const ResearchLabUI = ({ open, onClose }: { open: boolean; onClose: () =>
   const inventory = useStore((s) => s.inventory)
   const [research, setResearch] = useState(getResearchState())
   const [active, setActive] = useState(getActiveResearch())
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

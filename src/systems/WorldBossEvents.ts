@@ -1,7 +1,6 @@
 // ── World Boss Events — periodic massive enemies with global announcements ──
 
 import { useStore } from '../store'
-import { ENEMIES } from '../config/combat'
 import type { EnemyType } from '../config/combat'
 
 export interface WorldBossDef {

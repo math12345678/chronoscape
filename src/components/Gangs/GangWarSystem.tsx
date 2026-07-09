@@ -1,12 +1,11 @@
 import { useRef, useEffect, useMemo, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { FACTIONS } from '../../config/combat'
 import type { FactionId } from '../../config/combat'
-import { modifyReputation, getFactionAt, getReputation } from './GangSystem'
+import { modifyReputation } from './GangSystem'
 import { queueBurst } from '../HarvestVFX'
 import { getInfiniteTerrainHeight } from '../../world/chunkTerrain'
-import { triggerShake } from '../../hooks/useScreenShake'
 
 // ── Skirmish state ────────────────────────────────────
 interface Skirmish {
@@ -188,8 +187,6 @@ const SkirmishZone = ({ skirmish }: { skirmish: Skirmish }) => {
 
 // ── Main component ────────────────────────────────────
 export const GangWarManager = () => {
-  const { camera } = useThree()
-
   // Generate skirmishes periodically
   useFrame(() => {
     const now = performance.now()

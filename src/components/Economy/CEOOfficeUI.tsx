@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import { EXECUTIVE_DECISIONS, BOARD_MEMBERS } from '../../config/finance'
-import type { ExecutiveDecision, BoardMember } from '../../config/finance'
 import { getFinancialSnapshot } from './StockTicker'
 import {
-  isOnCooldown, executeDecision, hireBoardMember, getActiveBoosts,
-  getActiveEffects, getTotalDividendsPaid, getHiredBoardMemberCount,
+  isOnCooldown, executeDecision, hireBoardMember,
   _activeEffects, _totalDividendsPaid,
 } from '../../systems/CEOSystem'
 

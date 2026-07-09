@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
 import {
   getAllTerritories, getTerritoryState, getOwnedTerritories,
   getTerritoryIncomePerSec, canClaimTerritory, claimTerritory,
@@ -7,8 +6,7 @@ import {
 import { getThreatLevel } from '../../systems/EnemyEvolution'
 
 export const TerritoriesUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const inv = useStore((s) => s.inventory)
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { ALCHEMY_RECIPES } from '../../config/economy'
 import type { AlchemyRecipeId } from '../../config/economy'
 import { useStore } from '../../store'

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import {
   getKnowledgePaths, getMasteryRanks, getDimensionalPerks,
-  getProceduralMilestones, getTotalProgressionLevel, getTotalXPEarned,
-  levelKnowledge, getKnowledgeCost, canLevelKnowledge,
-  addMasteryXP, unlockDimensionalPerk, completeMilestone,
-  initializeDimensionalPerks, generateMilestone,
+  getProceduralMilestones, getTotalProgressionLevel,
+  levelKnowledge, getKnowledgeCost,
+  unlockDimensionalPerk,
+  initializeDimensionalPerks,
 } from '../../systems/InfiniteProgression'
 import type { KnowledgePath, MasteryRank, DimensionalPerk, ProceduralMilestone } from '../../systems/InfiniteProgression'
 import { useStore } from '../../store'
@@ -30,7 +30,6 @@ export const InfiniteProgressionUI = ({ open, onClose }: Props) => {
   const perks = getDimensionalPerks()
   const milestones = getProceduralMilestones()
   const totalLevel = getTotalProgressionLevel()
-  const totalXP = getTotalXPEarned()
 
   return (
     <div style={{
@@ -124,7 +123,7 @@ function KnowledgePanel({ knowledge, redraw }: { knowledge: KnowledgePath[]; red
   )
 }
 
-function MasteryPanel({ mastery, redraw }: { mastery: MasteryRank[]; redraw: () => void }) {
+function MasteryPanel({ mastery }: { mastery: MasteryRank[]; redraw: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {mastery.map(m => {
@@ -213,7 +212,7 @@ function PerksPanel({ perks, redraw }: { perks: DimensionalPerk[]; redraw: () =>
   )
 }
 
-function MilestonesPanel({ milestones, redraw }: { milestones: ProceduralMilestone[]; redraw: () => void }) {
+function MilestonesPanel({ milestones }: { milestones: ProceduralMilestone[]; redraw: () => void }) {
   const completed = milestones.filter(m => m.completed).length
 
   if (milestones.length === 0) {

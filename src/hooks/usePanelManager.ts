@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useStore } from '../store'
 
 // ── Panel key mappings ─────────────────────────────────
 // Each panel has: a human-readable id, a keyboard key binding,

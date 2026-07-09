@@ -154,7 +154,6 @@ export function tickLoans(): string | null {
       loan.defaulted = true
       _totalLoansDefaulted++
       const penalty = Math.floor(loan.totalOwed * config.defaultPenalty)
-      const state = useStore.getState()
       useStore.setState((s) => ({
         inventory: {
           ...s.inventory,

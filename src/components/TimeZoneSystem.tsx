@@ -177,7 +177,7 @@ const ZoneParticles = ({ zone }: { zone: TimeZoneDef }) => {
       spd[i] = 0.3 + Math.random() * 0.5
     }
     return { positions: pos, speeds: spd }
-  }, [COUNT])
+  }, [COUNT, zone.radius])
 
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry()

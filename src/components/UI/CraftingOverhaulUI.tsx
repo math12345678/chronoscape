@@ -6,12 +6,12 @@ import {
   equipArmor, toggleAccessory, getMaterialCount, hasCraftedItem,
   getTotalArmorBonus,
 } from '../../systems/CraftingSystem'
-import type { MaterialId, CraftableItemId } from '../../systems/CraftingSystem'
+import type { MaterialId } from '../../systems/CraftingSystem'
 
 export const CraftingOverhaulUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const inventory = useStore((s) => s.inventory)
   const [tab, setTab] = useState<'materials' | 'items' | 'equipment'>('materials')
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
   const craftInv = getCraftingInventory()
 
   useEffect(() => {

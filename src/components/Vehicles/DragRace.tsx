@@ -1,8 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { getTimeCreditBalance, spendTimeCredit } from '../../config/timeCredit'
+import { spendTimeCredit } from '../../config/timeCredit'
 import { triggerShake } from '../../hooks/useScreenShake'
-import { playClickSound } from '../../utils/audio'
-import { UI } from '../../utils/uiStyles'
 
 // ── Drag Race Module ─────────────────────────────────
 interface RaceConfig {

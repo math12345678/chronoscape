@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../store'
-import { UI, glassPanel } from '../utils/uiStyles'
+import { UI } from '../utils/uiStyles'
 import { getRelicPrestigeBonus } from '../systems/RelicForging'
 
 // ── Prestige config ─────────────────────────────────

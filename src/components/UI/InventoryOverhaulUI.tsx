@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useStore } from '../../store'
 import {
   getInventoryItems, searchItems, sortItems,
@@ -13,7 +13,11 @@ export const InventoryOverhaulUI = ({ open, onClose }: { open: boolean; onClose:
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [filter, setFilter] = useState<FilterType>('all')
 
-  const items = useMemo(() => {
+  // `inv` isn't read directly here, but it's the store slice that changes
+  // when items are added/removed — re-render (triggered by useStore) picks
+  // up fresh results from getInventoryItems()/searchItems() automatically,
+  // so a plain computed value (rather than useMemo) is correct here.
+  const items = (() => {
     if (!open) return []
     let result = getInventoryItems()
     if (filter !== 'all') result = result.filter((i) => i.type === filter)
@@ -23,9 +27,9 @@ export const InventoryOverhaulUI = ({ open, onClose }: { open: boolean; onClose:
       result = result.filter((i) => i.name.toLowerCase().includes(lower))
     }
     return sortItems(result, sortField, sortDir)
-  }, [open, inv, filter, sortField, sortDir, search])
+  })()
 
-  const totalItems = useMemo(() => !open ? 0 : getInventoryItems().reduce((s, i) => s + i.quantity, 0), [open, inv])
+  const totalItems = !open ? 0 : getInventoryItems().reduce((s, i) => s + i.quantity, 0)
 
   if (!open) return null
 

@@ -51,7 +51,6 @@ export function claimCraft(index: number): { recipeId: AlchemyRecipeId } | null 
   const craft = _activeCrafts[index]
   if (!craft || !craft.completed || craft.claimed) return null
 
-  const recipe = ALCHEMY_RECIPES[craft.recipeId]
   craft.claimed = true
 
   // Remove from active

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { isTimeSurgeActive, isTimeFrozen, isChronoShieldActive } from '../skills/ChronoSKills'
+import { isTimeSurgeActive, isTimeFrozen } from '../skills/ChronoSKills'
 
 // ── Speed line generator ────────────────────────────────
 let lineId = 0

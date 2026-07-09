@@ -1,5 +1,4 @@
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useFrameThrottled } from '../hooks/useFrameThrottled'
 import { getInfiniteTerrainHeight } from '../world/chunkTerrain'

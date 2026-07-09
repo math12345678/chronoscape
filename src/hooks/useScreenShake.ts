@@ -98,7 +98,6 @@ export function tickShake(delta: number): [number, number, number, number, numbe
     return [0, 0, 0, 0, 0, 0]
   }
 
-  const progress = t / p.duration
   // Exponential decay — rapid at first, then smooth
   const damping = Math.exp(-p.decay * t)
 

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { getActiveQuests, getCompletedQuestIds, startQuest, claimQuestReward } from '../Quest/QuestGiver'
 import { QUESTS } from '../../config/combat'
 import type { QuestId } from '../../config/combat'
-import { isVehicleActive } from '../Vehicles/HoverVehicle'
 
 export const QuestUI = () => {
   const [open, setOpen] = useState(false)

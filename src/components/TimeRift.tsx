@@ -356,7 +356,7 @@ const EnergyRings = ({ active, color, glowColor, ringCount }: { active: boolean;
 
 // ── Ground Pulse Ring (periodic expanding ring to help locate rifts) ──
 
-const GroundPulseRing = ({ active, color, glowColor, proximity }: { active: boolean; color: string; glowColor: string; proximity?: number }) => {
+const GroundPulseRing = ({ active, glowColor, proximity }: { active: boolean; color: string; glowColor: string; proximity?: number }) => {
   const ringRef = useRef<THREE.Mesh>(null)
   const time = useRef(0)
   const pulsePhase = useRef(Math.random() * Math.PI * 2)
@@ -498,7 +498,6 @@ export const TimeRift = ({ position, type = 'teal' }: TimeRiftProps) => {
   const riftScale = useRef(1)
   const riftScaleTarget = useRef(1)
   const respawnFlash = useRef(0)
-  const lastActivation = useRef(performance.now())
   const groupRef = useRef<THREE.Group>(null)
   const orbRef = useRef<THREE.Mesh>(null)
   const glowRef = useRef<THREE.Mesh>(null)

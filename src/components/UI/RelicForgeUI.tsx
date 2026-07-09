@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
 import {
   getRelics, forgeRelic, toggleEquipRelic, getEquippedRelics,
   canForge, RELIC_PASSIVES,
 } from '../../systems/RelicForging'
 
 export const RelicForgeUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const inv = useStore((s) => s.inventory)
-  const [refresh, setRefresh] = useState(0)
-  const [lastForge, setLastForge] = useState<string | null>(null)
+  const [, setRefresh] = useState(0)
+  const [, setLastForge] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
 import {
-  acceptBounty, getBounties, getActiveBounty, getBountyProgress, tickBounties,
+  acceptBounty,
   _bounties, _activeBountyId, _bountyProgress, _bountyStartTime, _bountyCompleted,
 } from '../../systems/BountySystem'
 

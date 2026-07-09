@@ -45,7 +45,7 @@ export const ExplosionEffect = ({ position, onComplete }: ExplosionEffectProps) 
     flash.style.opacity = '0.6'
     requestAnimationFrame(() => { flash.style.opacity = '0' })
     setTimeout(() => { if (flash.parentNode) flash.parentNode.removeChild(flash) }, 200)
-  }, [sounds])
+  }, [sounds, position])
 
   // Per-instance geometry and particles
   const { particles, geometry } = useMemo(() => {

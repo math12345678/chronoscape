@@ -17,7 +17,6 @@ export function clearTrail() { _trailQueue = [] }
 
 export const VehicleTrail = () => {
   const pointsRef = useRef<THREE.Points>(null)
-  const geoRef = useRef<THREE.BufferGeometry | null>(null)
   const time = useRef(0)
 
   useFrame((_, delta) => {

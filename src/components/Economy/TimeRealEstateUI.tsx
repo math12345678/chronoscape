@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
-import { LAND_PARCELS } from '../../config/finance'
-import type { LandParcel } from '../../config/finance'
 import {
   buyLand, sellLand, buildProperty, upgradeBuilding,
-  tickRent, tickPropertyValues, findTenants, setRentMultiplier,
-  getParcels, getTotalRentCollected, getTotalPropertyValue,
+  getTotalPropertyValue,
   _parcels, _totalRentCollected,
 } from '../../systems/RealEstateSystem'
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { getAllTomes, getDiscoveredTomes, getTomeCount, getTomeModifier } from '../../systems/TimeLibrary'
 
 export const TimeLibraryUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return
@@ -19,7 +19,7 @@ export const TimeLibraryUI = ({ open, onClose }: { open: boolean; onClose: () =>
       groups[t.rarity].push(t)
     }
     return groups
-  }, [open, refresh])
+  }, [open, allTomes])
 
   if (!open) return null
 

@@ -4,8 +4,6 @@
 
 import { llmGenerateJSON } from '../utils/llmClient'
 import { useStore } from '../store'
-import { getEvolvedResources } from './EvolutionIntegration'
-import { getDiscoveredResources } from './EvolvingContentEngine'
 
 // ── Forgeable Item Types ────────────────────────────────
 

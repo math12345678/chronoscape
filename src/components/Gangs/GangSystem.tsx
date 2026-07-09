@@ -179,7 +179,7 @@ const TerritoryPillar = ({ zone, angle }: { zone: TerritoryZone; angle: number }
   const pz = zone.center[1] + Math.sin(angle) * zone.radius
   const py = getInfiniteTerrainHeight(px, pz)
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     if (!pillarRef.current) return
     const rep = getReputation(zone.faction)
     const intensity = rep >= 20 ? 0.6 : rep >= 0 ? 0.3 : rep >= -40 ? 0.15 : 0.08

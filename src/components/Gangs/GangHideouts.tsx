@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import { FACTIONS } from '../../config/combat'
 import type { FactionId } from '../../config/combat'
-import { getReputation, modifyReputation } from './GangSystem'
+import { modifyReputation } from './GangSystem'
 import { getTimeCreditBalance, spendTimeCredit } from '../../config/timeCredit'
-import { triggerShake } from '../../hooks/useScreenShake'
 import { UI } from '../../utils/uiStyles'
 
 // ── Hideout config ──────────────────────────────────
@@ -72,7 +70,6 @@ export const GangHideoutPanel = () => {
       </div>
       {HIDEOUTS.map(h => {
         const owned = _ownedHideouts.has(h.id)
-        const rep = getReputation(h.faction)
         const canAfford = tc >= h.buildCost
         const color = h.color
         return (

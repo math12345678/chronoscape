@@ -2,8 +2,6 @@
 // Events that actually occur in the world with gameplay effects.
 // Triggered by evolution epochs, distance milestones, and random chance.
 
-import { useStore } from '../store'
-
 export interface WorldEvent {
   id: string
   name: string

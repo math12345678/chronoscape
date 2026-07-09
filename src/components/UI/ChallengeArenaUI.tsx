@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import {
-  getArenaState, isArenaActive, startArena, startNextWave,
+  getArenaState, startArena, startNextWave,
   endArena, recordArenaKill, getCurrentWaveInfo,
 } from '../../systems/ChallengeArena'
 

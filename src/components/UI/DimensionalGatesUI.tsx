@@ -6,7 +6,7 @@ import {
 } from '../../systems/DimensionalGates'
 
 export const DimensionalGatesUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

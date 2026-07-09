@@ -4,7 +4,6 @@
 
 import { getEnemyMeshes } from '../components/Combat/HostileEnemyManager'
 import { damagePlayer, healPlayer, getPlayerHealth } from '../components/Combat/HealthTracker'
-import { PLAYER_MAX_HEALTH } from '../config/combat'
 import { useStore } from '../store'
 import * as THREE from 'three'
 
@@ -221,7 +220,6 @@ export function useSkill(slot: number): { damage: number; targets: string[]; sta
     const now = Date.now()
     const recent = _rewindHealthHistory.filter(h => now - h.time < 5000)
     if (recent.length > 0) {
-      const targetHealth = Math.max(getPlayerHealth(), recent[0].health * 0.5)
       // Apply via heal
       for (let i = 0; i < 5; i++) healPlayer()
     }

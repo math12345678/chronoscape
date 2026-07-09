@@ -5,7 +5,7 @@ import {
 } from '../../systems/ParallelSelves'
 
 export const ParallelSelvesUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

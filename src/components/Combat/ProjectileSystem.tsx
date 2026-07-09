@@ -1,10 +1,10 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WEAPONS } from '../../config/combat'
 import type { WeaponId } from '../../config/combat'
 import { useStore } from '../../store'
-import { damageEnemy, getEnemyMeshes, setEquippedWeapon, getAndClearFiredFlag, findNearestEnemy } from './HostileEnemyManager'
+import { damageEnemy, getEnemyMeshes, setEquippedWeapon } from './HostileEnemyManager'
 import { getInfiniteTerrainHeight } from '../../world/chunkTerrain'
 import { queueBurst } from '../HarvestVFX'
 import { isTimeSurgeActive } from '../../skills/ChronoSKills'
@@ -18,7 +18,6 @@ import {
   isSingleUse,
   initWeaponModifiers,
   setWeaponModifiers,
-  rollWeaponModifiers,
 } from '../../systems/WeaponModifierSystem'
 import { getPrestigeFireRateBonus } from '../PrestigeSystem'
 import { getAchievementPerkModifier } from '../../systems/AchievementPerks'
@@ -31,7 +30,6 @@ import {
   getTalentDamageMultiplier,
   getTalentFireRateMultiplier,
   getTalentRangeMultiplier,
-  getTalentDropMultiplier,
   checkDoubleTap,
   getLifeStealHeal,
   getCritDamageMultiplier as getTalentCritDamageMultiplier,

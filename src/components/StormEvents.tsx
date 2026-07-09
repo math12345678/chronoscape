@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { triggerShake } from '../hooks/useScreenShake'
 import { useStore } from '../store'
 import { setTimeScaleTarget } from './TimeManager'
-import { getTimeCreditBalance, spendTimeCredit } from '../config/timeCredit'
+import { spendTimeCredit } from '../config/timeCredit'
 
 // ── Storm types ────────────────────────────────────
 export type StormType = 'hurricane' | 'acidRain' | 'temporalStorm'

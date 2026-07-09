@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import { INDUSTRIES } from '../../config/finance'
-import type { IndustryType, IndustryInstance } from '../../config/finance'
+import type { IndustryType } from '../../config/finance'
 import {
-  getIndustries, getTotalProduced, buildIndustry, upgradeIndustry,
-  tickIndustries, setBoardMultiplier,
+  buildIndustry, upgradeIndustry,
   _industries, _totalProduced,
 } from '../../systems/IndustrySystem'
 

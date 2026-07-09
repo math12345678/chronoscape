@@ -1,10 +1,8 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store'
 import { triggerShake } from '../hooks/useScreenShake'
-import { playClickSound } from '../utils/audio'
 import { setTimeScaleTarget } from './TimeManager'
 import { spawnEnemy } from './Combat/HostileEnemyManager'
-import { queueBurst, queueExplosion } from './HarvestVFX'
 
 export type CataclysmType =
   | 'timeStorm'
@@ -94,7 +92,7 @@ function triggerEvent(type: CataclysmType) {
       useStore.getState().addRaw(200)
       break
     case 'temporalNova':
-      useStore.setState((s) => ({ blocks: {} }))
+      useStore.setState(() => ({ blocks: {} }))
       useStore.setState((s) => ({
         inventory: {
           ...s.inventory,

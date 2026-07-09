@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   getChronovateState, getMessages, chatWithChronovate,
-  generateNarrative, generateInsight, setPersonality,
+  generateInsight, setPersonality,
 } from '../../systems/ChronovateAI'
 import type { ChronovateMessage } from '../../systems/ChronovateAI'
 

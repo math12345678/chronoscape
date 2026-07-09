@@ -2,7 +2,6 @@ import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { triggerShake } from '../hooks/useScreenShake'
-import { setTimeScaleTarget } from './TimeManager'
 
 interface NukeEvent {
   position: [number, number, number]

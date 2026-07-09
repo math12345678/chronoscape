@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useStore } from '../../store'
 import {
   spinSlots, spinRoulette, coinFlip,
@@ -27,7 +27,6 @@ export const CasinoUI = ({ open, onClose }: { open: boolean; onClose: () => void
   const [slotSymbols, setSlotSymbols] = useState(['⟐', '⟐', '⟐'])
   const [stats, setStats] = useState(getCasinoStats())
   const [rouletteResult, setRouletteResult] = useState<{ number: number; color: string } | null>(null)
-  const [refresh, setRefresh] = useState(0)
 
   // Roulette state
   const [rouletteBetType, setRouletteBetType] = useState<RouletteBet>('red')

@@ -7,7 +7,7 @@ import { ModifierTooltip } from './ModifierTooltip'
 import { FButton } from './controls/FButton'
 import { FLabel } from './controls/FLabel'
 import { FSection } from './controls/FSection'
-import { UI, valueStyle } from '../../utils/uiStyles'
+import { UI } from '../../utils/uiStyles'
 import type { WeaponId } from '../../config/combat'
 
 export const CraftingBench = () => {

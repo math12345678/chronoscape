@@ -197,16 +197,15 @@ export function tickResearch(dt: number): void {
     progress.completed = true
     progress.level = 1
     progress.progress = 1
-    const completedId = _activeResearch
     _activeResearch = null
 
     // Apply permanent effects
-    applyResearchEffect(completedId!)
+    applyResearchEffect()
   }
 }
 
 /** Apply permanent research effects */
-function applyResearchEffect(id: ResearchId): void {
+function applyResearchEffect(): void {
   // Effects are checked via the getter functions below
 }
 
@@ -217,7 +216,6 @@ export function cancelResearch(): void {
   if (!def) return
 
   // Refund 50% of cost
-  const state = useStore.getState()
   const refundRaw = Math.floor((def.cost.raw ?? 0) * 0.5)
   const refundLiquid = Math.floor((def.cost.liquid ?? 0) * 0.5)
   const refundCrystal = Math.floor((def.cost.crystal ?? 0) * 0.5)

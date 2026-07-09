@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store'
 import { getNukeCooldown, getNukeCharges, getMaxCharges, canNuke } from '../../skills/ChronoNuke'
-import { UI } from '../../utils/uiStyles'
 
 export const ChronoNukeHUD = () => {
   const [, refresh] = useState(0)

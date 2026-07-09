@@ -18,7 +18,7 @@ import {
 
 export const DragRacePanel = ({ onClose }: { onClose: () => void }) => {
   const [tab, setTab] = useState<'races' | 'upgrades'>('races')
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     const iv = setInterval(() => setRefresh(n => n + 1), 100)

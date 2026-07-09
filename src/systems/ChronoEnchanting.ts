@@ -4,7 +4,6 @@
 // Higher rarity items can have more enchant slots.
 
 import { useStore } from '../store'
-import { removeCraftedItem, addCraftedItem, getCraftedItemQty } from './InventoryManager'
 
 export type EnchantRarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'mythic'
 

@@ -6,17 +6,14 @@ import { addVehicleTravel } from '../Quest/QuestGiver'
 import { useStore } from '../../store'
 import { queueBurst } from '../HarvestVFX'
 import { setVehicleSpeedForUI } from '../UI/FuelGauge'
-import { pushTrailPoint, clearTrail } from './VehicleTrail'
+import { pushTrailPoint } from './VehicleTrail'
 import { triggerShake } from '../../hooks/useScreenShake'
 import {
   getVehicleSpeedBonus,
   getVehicleHandlingBonus,
-  getVehicleBoostBonus,
   isRaceActive,
   tickRace,
   mashRaceButton,
-  getBoostPickupBonus,
-  setBoostPickupBonus,
 } from './DragRace'
 
 // ── Boost pickup state ────────────────────────────────
@@ -140,7 +137,6 @@ export const HoverVehicle = () => {
     // DragRace bonuses
     const speedBonus = 1 + getVehicleSpeedBonus() * 0.05
     const handlingBonus = 1 + getVehicleHandlingBonus()
-    const boostBonus = 1 + getVehicleBoostBonus()
 
     // Acceleration
     const maxSpeed = ((boosting || _boostPickupActive) ? BOOST_SPEED : BASE_SPEED) * speedBonus

@@ -173,7 +173,7 @@ export const DeathScreen = () => {
   const [rebirth, setRebirth] = useState(false)
   const [rebirthFlash, setRebirthFlash] = useState(false)
   const heartbeatRef = useRef(0)
-  const [hb, setHb] = useState(0)
+  const [, setHb] = useState(0)
 
   useEffect(() => {
     const died = () => {

@@ -20,7 +20,7 @@ const REWARD_MILESTONES = [10, 50, 100, 500, 1000]
 export const ChronoBestiaryUI = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [bestiary, setBestiary] = useState(getBestiary())
   const [selectedType, setSelectedType] = useState<EnemyType | null>(null)
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   useEffect(() => {
     if (!open) return

@@ -45,7 +45,6 @@ export const CalibrationGame = () => {
   const trailRef = useRef<number[]>([])
   const comboRef = useRef(0)
   const maxComboRef = useRef(0)
-  const speedRef = useRef(CALIBRATION_SWEEP_SPEED)
   const hitStreak = useRef(0)
 
   // Select first undiscovered formula
@@ -56,6 +55,7 @@ export const CalibrationGame = () => {
     [formulaId],
   )
   const info = formulaId ? FORMULA_INFO[formulaId as FormulaId] : null
+  const infoColor = info?.color ?? '#aa88ff'
   const isInZone = needlePos.current >= target.start && needlePos.current <= target.end
 
   // Needle animation — driven by rAF
@@ -179,7 +179,7 @@ export const CalibrationGame = () => {
         comboEl.style.opacity = '0'
       }
     }
-  }, [activeFormula, target, addHitToFormula, sounds])
+  }, [activeFormula, target, addHitToFormula, sounds, infoColor])
 
   // Spacebar support
   useEffect(() => {
@@ -192,8 +192,6 @@ export const CalibrationGame = () => {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [handleCalibrate])
-
-  const infoColor = info?.color ?? '#aa88ff'
 
   return (
     <div className="space-y-5">

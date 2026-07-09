@@ -2,7 +2,6 @@
 
 import { useStore } from '../store'
 import type { WeaponId } from '../config/combat'
-import { MODIFIERS } from '../config/modifiers'
 import { rollWeaponModifiers, setWeaponModifiers } from './WeaponModifierSystem'
 
 // ── Rarity ─────────────────────────────────────────────────
