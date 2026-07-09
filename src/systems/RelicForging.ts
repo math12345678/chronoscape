@@ -245,9 +245,11 @@ export function getRelicFireRateBonus(): number {
 }
 
 /** Flat units added to weapon engagement range (rp_attract has no pickup-radius
- *  mechanic to hook since resources aren't physical world pickups here). */
+ *  mechanic to hook since resources aren't physical world pickups here). The
+ *  rolled 'range' bonusStat is a fraction like damage/fireRate, so it's scaled
+ *  against a nominal 40-unit weapon range rather than added as if it were flat. */
 export function getRelicRangeBonus(): number {
-  return getRelicModifiers().range + getRelicPassiveValue('rp_attract')
+  return getRelicModifiers().range * 40 + getRelicPassiveValue('rp_attract')
 }
 
 export function getRelicDefenseBonus(): number {
